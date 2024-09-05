@@ -33,10 +33,15 @@ dependencies:
   # Use these deps when publishing.
   audio_service_platform_interface: ^0.1.1
   audio_service_web: ^0.1.2
+  audio_service_ohos: 
+    path: ../audio_service_ohos
 
-  audio_session: ^0.1.16
+  audio_session:
+    git:
+      url: https://gitee.com/openharmony-sig/flutter_audio_session.git
   rxdart: '>=0.26.0 <0.28.0'
-  flutter_cache_manager: ^3.3.1
+  flutter_cache_manager:
+    path: ../flutter_cache_manager-3.3.2
   clock: ^1.1.0
   js: '>=0.6.3 <0.8.0'
   flutter:
@@ -49,7 +54,7 @@ dev_dependencies:
     sdk: flutter
   mockito: ^5.0.0
   fake_async: ^1.2.0
-  flutter_lints: ^3.0.1
+  flutter_lints: ^2.0.3
 
 flutter:
   plugin:
@@ -63,3 +68,5 @@ flutter:
         pluginClass: AudioServicePlugin
       web:
         default_package: audio_service_web
+      ohos:
+        default_package: audio_service_ohos
