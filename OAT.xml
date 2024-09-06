@@ -87,9 +87,8 @@
                 <!--filteritem type="filepath" name="projectroot/[a-zA-Z0-9]{20,}.sh" desc="Temp files"/-->
             </filefilter>
             <filefilter name="binaryFileTypePolicyFilter" desc="Filters for binary file policies">
-            	<filteritem type="filename" name="*.iml|*.json|*.txt" desc="desc files"/>
-                <filteritem type='filepath' name="*/example/ohos/entry/libs/arm64-v8a/libc++_shared.so" desc='二进制文件,不影响兼容性'/>
-                <filteritem type='filepath' name="ohos/AppScope/resources/base/media/app_icon.png" desc='二进制文件,不影响兼容性'/>
+            	<filteritem type="filename" name="*.iml|*.json|*.txt|*.mp4" desc="desc files"/>
+                <filteritem type='filepath' name="*/audio_service_ohos/example/assets/video2.mp4" desc='二进制文件,不影响兼容性'/>
             </filefilter>
 
         </filefilterlist>
