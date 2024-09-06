@@ -57,6 +57,9 @@
                 <filteritem type="filepath" name="*/audio_service/" desc="不影响兼容性"/>
                 <filteritem type="filepath" name="*/audio_service_platform_interface/" desc="不影响兼容性"/>
                 <filteritem type="filepath" name="*/audio_service_web/" desc="不影响兼容性"/>
+				<filteritem type="filepath" name="*/audio_service_ohos/example/assets" desc="不影响兼容性"/>
+				<filteritem type="filepath" name="*/audio_service_ohos/example/lib" desc="不影响兼容性"/>
+				<filteritem type="filepath" name="*/audio_service_ohos/lib" desc="不影响兼容性"/>
             </filefilter>
             <filefilter name="defaultPolicyFilter" desc="Filters for compatibility，license header policies">
                 <!--filteritem type="filename" name="*.uvwxyz" desc="Describe the reason for filtering scan results"/-->
