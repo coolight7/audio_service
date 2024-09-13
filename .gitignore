@@ -73,7 +73,6 @@ DerivedData/
 **/ios/**/Icon?
 Pods/
 .symlinks/
-profile
 xcuserdata
 .generated/
 **/Flutter/App.framework

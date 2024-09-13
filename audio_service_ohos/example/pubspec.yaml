@@ -35,7 +35,9 @@ dependencies:
       url: "https://gitee.com/openharmony-sig/flutter_audioplayers.git"
       path: "packages/audioplayers"
   audio_service:
-    path: ../../audio_service
+    git:
+      url: "https://gitee.com/openharmony-sig/fluttertpc_audio_service.git"
+      path: "audio_service"
   video_player:
     git:
       url: "https://gitee.com/openharmony-sig/flutter_packages.git"
@@ -49,6 +51,16 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+dependency_overrides:
+  path_provider:
+   git:
+     url: https://gitee.com/openharmony-sig/flutter_packages.git
+     path: packages/path_provider/path_provider
+  sqflite:
+   git:
+     url: https://gitee.com/openharmony-sig/flutter_sqflite.git
+     path: sqflite
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
