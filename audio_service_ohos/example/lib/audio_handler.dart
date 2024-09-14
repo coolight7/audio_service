@@ -249,16 +249,25 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
 
   @override
   Future<void> removeQueueItemAt(int index) async {
-    // 检查索引范围
+    // 被移除的是当前播放
+    print('要移除的index :' +
+        index.toString() +
+        '当前播放的index : ' +
+        _currentIndex.toString());
+    _playlist.removeAt(index);
+    //刷新列队
+    queue.add(_playlist);
     if (index == _currentIndex) {
       await _audioPlayer.stop();
-    }
-    _playlist.removeAt(index);
-    if (_playlist.isNotEmpty) {
-      if (_currentIndex > _playlist.length - 1) {
-        _currentIndex = _playlist.length - 1;
+      if (_playlist.isNotEmpty) {
+        _currentIndex = _currentIndex < _playlist.length
+            ? _currentIndex
+            : _currentIndex - 1;
+        play();
       }
-      play();
+    } else if (index < _currentIndex) {
+      //前进一位
+      _currentIndex = _currentIndex - 1;
     }
     return Future.value();
   }
