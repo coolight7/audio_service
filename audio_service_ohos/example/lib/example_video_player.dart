@@ -180,6 +180,7 @@ class MediaState {
 /// An [AudioHandler] for playing a single item.
 class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   late StreamController<PlaybackState> streamController;
+  bool stopIsClick = false;
 
   static final _item = MediaItem(
       id: 'video1.mp4',
@@ -214,7 +215,10 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   // your audio playback logic in one place.
 
   @override
-  Future<void> play() async => _videoPlay!();
+  Future<void> play() async {
+    stopIsClick = false;
+    _videoPlay!();
+  }
 
   @override
   Future<void> pause() async => _videoPause!();
@@ -223,7 +227,10 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   Future<void> seek(Duration position) async => _videoSeek!(position);
 
   @override
-  Future<void> stop() async => _videoStop!();
+  Future<void> stop() async {
+    stopIsClick = true;
+    _videoStop!();
+  }
 
   void initializeStreamController(
       VideoPlayerController? videoPlayerController) {
@@ -231,14 +238,24 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
 
     AudioProcessingState _processingState() {
       if (videoPlayerController == null) return AudioProcessingState.idle;
-      if (videoPlayerController.value.isInitialized)
-        return AudioProcessingState.ready;
+      if (videoPlayerController.value.isInitialized) {
+        if (stopIsClick) {
+          return AudioProcessingState.idle;
+        } else {
+          return AudioProcessingState.ready;
+        }
+      }
       return AudioProcessingState.idle;
     }
 
-
     void _addVideoEvent() {
       streamController.add(PlaybackState(
+        controls: [
+          MediaControl.rewind,
+          if (_isPlaying()) MediaControl.pause else MediaControl.play,
+          MediaControl.stop,
+          MediaControl.fastForward,
+        ],
         systemActions: const {
           MediaAction.seek,
           MediaAction.seekForward,
