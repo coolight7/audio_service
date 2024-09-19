@@ -83,6 +83,7 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
 
   int _currentIndex = 0;
   bool _isLoading = false;
+  PlayerState state = PlayerState.disposed;
   Duration _duration = Duration.zero;
   final _mediaLibrary = MediaLibrary();
   AudioServiceRepeatMode _loopMode = AudioServiceRepeatMode.none;
@@ -125,6 +126,7 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
   AudioPlayerHandlerImpl() {
     _audioPlayer.onPlayerStateChanged.listen((state) async {
       print('onPlayerStateChanged $state');
+      this.state = state;
       if (state == PlayerState.completed) {
         switch (_loopMode) {
           case AudioServiceRepeatMode.none:
@@ -154,6 +156,12 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
         playbackState.add(playbackState.value.copyWith(
             processingState: AudioProcessingState.ready,
             playing: true,
+            controls: [
+              MediaControl.skipToPrevious,
+              MediaControl.pause,
+              MediaControl.stop,
+              MediaControl.skipToNext,
+            ],
             bufferedPosition: _duration,
             updatePosition:
                 await _audioPlayer.getCurrentPosition() as Duration));
@@ -162,12 +170,18 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
         playbackState.add(playbackState.value.copyWith(
           processingState: AudioProcessingState.ready,
           playing: false,
+          controls: [
+            MediaControl.skipToPrevious,
+            MediaControl.play,
+            MediaControl.stop,
+            MediaControl.skipToNext,
+          ],
         ));
       } else if (state == PlayerState.stopped) {
         playbackState.add(playbackState.value.copyWith(
-          processingState: AudioProcessingState.ready,
-          playing: false,
-        ));
+            processingState: AudioProcessingState.idle,
+            playing: false,
+            updatePosition: Duration.zero));
       }
     });
     mediaItem.add(_playlist[0]);
@@ -209,7 +223,8 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
   @override
   Future<void> stop() async {
     await _audioPlayer.stop();
-    playbackState.add(playbackState.value.copyWith());
+    playbackState.add(playbackState.value
+        .copyWith(processingState: AudioProcessingState.idle, playing: false));
   }
 
   @override
@@ -258,12 +273,15 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
     //刷新列队
     queue.add(_playlist);
     if (index == _currentIndex) {
-      await _audioPlayer.stop();
       if (_playlist.isNotEmpty) {
         _currentIndex = _currentIndex < _playlist.length
             ? _currentIndex
             : _currentIndex - 1;
-        play();
+        PlayerState currentState = state;
+        await stop();
+        if (currentState == PlayerState.playing) {
+          play();
+        }
       }
     } else if (index < _currentIndex) {
       //前进一位
