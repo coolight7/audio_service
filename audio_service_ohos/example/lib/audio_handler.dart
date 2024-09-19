@@ -177,11 +177,6 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
             MediaControl.skipToNext,
           ],
         ));
-      } else if (state == PlayerState.stopped) {
-        playbackState.add(playbackState.value.copyWith(
-            processingState: AudioProcessingState.idle,
-            playing: false,
-            updatePosition: Duration.zero));
       }
     });
     mediaItem.add(_playlist[0]);
@@ -197,7 +192,7 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
     if (_audioPlayer.state == PlayerState.paused) {
       await _audioPlayer.resume();
     } else {
-      await stop();
+      await _audioPlayer.stop();
       playbackState.add(playbackState.value.copyWith(
         processingState: AudioProcessingState.loading,
       ));
@@ -223,8 +218,10 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
   @override
   Future<void> stop() async {
     await _audioPlayer.stop();
-    playbackState.add(playbackState.value
-        .copyWith(processingState: AudioProcessingState.idle, playing: false));
+    playbackState.add(playbackState.value.copyWith(
+        processingState: AudioProcessingState.idle,
+        playing: false,
+        updatePosition: Duration.zero));
   }
 
   @override
@@ -278,7 +275,7 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
             ? _currentIndex
             : _currentIndex - 1;
         PlayerState currentState = state;
-        await stop();
+        await _audioPlayer.stop();
         if (currentState == PlayerState.playing) {
           play();
         }
@@ -319,7 +316,7 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
     } else {
       _currentIndex = 0;
     }
-    await stop();
+    await _audioPlayer.stop();
     await play();
   }
 
@@ -330,14 +327,14 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
     } else {
       _currentIndex = _playlist.length - 1;
     }
-    await stop();
+    await _audioPlayer.stop();
     await play();
   }
 
   @override
   Future<void> skipToQueueItem(int index) async {
     _currentIndex = index;
-    await stop();
+    await _audioPlayer.stop();
     await play();
   }
 

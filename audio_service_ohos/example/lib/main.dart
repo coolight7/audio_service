@@ -303,6 +303,16 @@ class ControlButtons extends StatelessWidget {
             }
           },
         ),
+        StreamBuilder<PlaybackState>(
+          stream: audioHandler.playbackState,
+          builder: (context, snapshot) {
+            final queueState = snapshot.data ?? QueueState.empty;
+            return IconButton(
+              icon: const Icon(Icons.stop),
+              onPressed: audioHandler.stop,
+            );
+          },
+        ),
         StreamBuilder<QueueState>(
           stream: audioHandler.queueState,
           builder: (context, snapshot) {

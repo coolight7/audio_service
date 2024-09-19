@@ -18,7 +18,7 @@ import { avSession } from '@kit.AVSessionKit';
 import { BusinessError, Callback } from '@kit.BasicServicesKit';
 import { Any, Log } from '@ohos/flutter_ohos';
 import { backgroundTaskManager } from '@kit.BackgroundTasksKit';
-import { SessionParameter } from './AudioProcessingState';
+import { SessionParameter,AudioProcessingState } from './AudioProcessingState';
 import { JSON } from '@kit.ArkTS';
 
 const TAG: string = "AudioService";
@@ -34,11 +34,12 @@ export default class AudioService {
   private isStartContinuousTask = false
   private queueItems: avSession.AVQueueItem[] = []
   private fastForwardInterval: avSession.SkipIntervals = avSession.SkipIntervals.SECONDS_10
+  private mediaType: avSession.AVSessionType = 'audio'
 
   constructor(context: Context, ability: UIAbility) {
     this.context = context
     this.ability = ability
-    this.createSession()
+    // this.createSession()
   }
 
   setFastForwardInterval(data: number) {
@@ -94,15 +95,8 @@ export default class AudioService {
       let extrasMap: Map<string, string> = mediaItem.get('extras');
       if (extrasMap != null) {
         if (extrasMap.has('mediaType')) {
-          let mediaType: string = extrasMap.get('mediaType') as string
-          if (mediaType == 'video') {
-            await this.session?.deactivate()
-            await this.session?.destroy()
-            let type: avSession.AVSessionType = 'video';
-            this.session = await avSession.createAVSession(getContext(this), 'SESSION_NAME', type);
-            this.setListenerForMesFromController(this.session)
+            this.mediaType = extrasMap.get('mediaType') as avSession.AVSessionType
           }
-        }
       }
       let id: string = mediaItem.get('id');
       let index = this.queueItems.findIndex(item => item.description?.assetId === id);
@@ -157,16 +151,12 @@ export default class AudioService {
         }
       }
       aVPlaybackState.loopMode = mediaItem.get('repeatMode')
-      // if (mediaItem.has('bufferedPosition')) {
-      //   let duration: number = mediaItem.get('bufferedPosition')
-      //   Log.i(TAG, `duration : ${duration} , avMetadata.duration : ${this.avMetadata.duration}`);
-      //   if (this.avMetadata.duration != duration) {
-      //     this.avMetadata.duration = duration
-      //     await this.session?.setAVMetadata(this.avMetadata)
-      //   }
-      // }
-      Log.i(TAG, `aVPlaybackState : ${JSON.stringify(aVPlaybackState)}`);
+      if (this.session == null && playing) {
+        await this.createSession();
+      }
+      Log.w(TAG, `aVPlaybackState  : ${JSON.stringify(aVPlaybackState)}`);
       this.session?.setAVPlaybackState(aVPlaybackState)
+      await this.session?.activate()
     } catch (e) {
       Log.e(TAG, "AudioService setAVPlaybackState catch " + JSON.stringify(e));
     }
@@ -216,9 +206,10 @@ export default class AudioService {
 
   // 创建session
   async createSession() {
-    let type: avSession.AVSessionType = 'audio';
     try {
-      this.session = await avSession.createAVSession(this.ability.context, 'SESSION_NAME', type);
+      this.session = await avSession.createAVSession(this.ability.context, 'SESSION_NAME', this.mediaType);
+      await this.session.setAVMetadata(this.avMetadata)
+      await this.session.activate()
       //监听事件
       this.setListenerForMesFromController(this.session)
       Log.i(TAG, `session create done : sessionId : ${this.session.sessionId}`);
