@@ -187,7 +187,7 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       album: "video1.mp4",
       title: "video1.mp4",
       artist: "Science Friday and WNYC Studios",
-      duration: const Duration(milliseconds: 5739820),
+      duration: const Duration(milliseconds: 29024),
       artUri: Uri.parse(
           'https://media.wnyc.org/i/1400/1400/l/80/1/ScienceFriday_WNYCStudios_1400.jpg'),
       extras: {'mediaType': 'video'});
