@@ -335,6 +335,12 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
 
   @override
   Future<void> setSpeed(double speed) async {
+    print('speed : ' + speed.toString());
+    //鸿蒙audioplayers库暂不支持 0.5倍速和1.5倍速
+    if (speed == 0.5 || speed == 1.5) {
+      return;
+    }
+    playbackState.add(playbackState.value.copyWith(speed: speed));
     this.speed.add(speed);
     await _audioPlayer.setPlaybackRate(speed);
   }

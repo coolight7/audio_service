@@ -144,7 +144,7 @@ export default class AudioService {
         aVPlaybackState.state = avSession.PlaybackState.PLAYBACK_STATE_PAUSE
         this.stopContinuousTask()
       }
-      let processingState = mediaItem.get('processingState')
+      let processingState = mediaItem.get('processingState') as number
       if (playing) {
         aVPlaybackState.position = {
           elapsedTime: mediaItem.get('updatePosition'),
