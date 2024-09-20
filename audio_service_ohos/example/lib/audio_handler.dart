@@ -28,57 +28,92 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
     implements AudioPlayerHandler {
   final AudioPlayer _audioPlayer = AudioPlayer()
     ..setReleaseMode(ReleaseMode.stop);
+  Duration currentPosition = Duration.zero;
 
-  // 播放列表
+  Stream<Duration> get durationStream => createPositionStream(
+      steps: 800,
+      minPeriod: const Duration(milliseconds: 16),
+      maxPeriod: const Duration(milliseconds: 200));
+
+  Stream<Duration> createPositionStream({
+    int steps = 800,
+    Duration minPeriod = const Duration(milliseconds: 200),
+    Duration maxPeriod = const Duration(milliseconds: 200),
+  }) {
+    assert(minPeriod <= maxPeriod);
+    assert(minPeriod > Duration.zero);
+    Duration? last;
+    late StreamController<Duration> controller;
+    late StreamSubscription<MediaItem?> mediaItemSubscription;
+    late StreamSubscription<PlaybackState> playbackStateSubscription;
+    Timer? currentTimer;
+    Duration duration() => mediaItem.value?.duration ?? Duration.zero;
+    Duration step() {
+      var s = duration() ~/ steps;
+      if (s < minPeriod) s = minPeriod;
+      if (s > maxPeriod) s = maxPeriod;
+      return s;
+    }
+
+    void yieldPosition(Timer? timer) {
+      _audioPlayer.getCurrentPosition().then((value) {
+        currentPosition = value ?? Duration.zero;
+        if (last != currentPosition && currentPosition.inMilliseconds != -1) {
+          controller.add(last = currentPosition);
+        }
+      });
+    }
+
+    controller = StreamController.broadcast(
+      sync: true,
+      onListen: () {
+        mediaItemSubscription = mediaItem.listen((MediaItem? mediaItem) {
+          // Potentially a new duration
+          currentTimer?.cancel();
+          currentTimer = Timer.periodic(step(), yieldPosition);
+        });
+        playbackStateSubscription = playbackState.listen((PlaybackState state) {
+          // Potentially a time discontinuity
+          yieldPosition(currentTimer);
+        });
+      },
+      onCancel: () {
+        mediaItemSubscription.cancel();
+        playbackStateSubscription.cancel();
+      },
+    );
+    return controller.stream;
+  }
+
+  // 播放列表 , 换成原项目MediaItem资源
   final List<MediaItem> _playlist = [
     MediaItem(
-        id: 'mengxingshifen_wubai.mp3',
-        album: "梦醒时分",
-        title: "梦醒时分",
-        artist: "伍佰",
-        duration: const Duration(milliseconds: 32359),
-        artUri: Uri.parse(
-            'https://img2.baidu.com/it/u=2692119690,2027500640&fm=253&fmt=auto&app=120&f=JPEG?w=661&h=429')),
+      id: 'https://s3.amazonaws.com/scifri-episodes/scifri20181123-episode.mp3',
+      album: "Science Friday",
+      title: "A Salute To Head-Scratching Science",
+      artist: "Science Friday and WNYC Studios",
+      duration: const Duration(milliseconds: 5739820),
+      artUri: Uri.parse(
+          'https://media.wnyc.org/i/1400/1400/l/80/1/ScienceFriday_WNYCStudios_1400.jpg'),
+    ),
     MediaItem(
-        id: 'niwangqianzoubuyaohuitou_linsanqi.mp3',
-        album: "你往前走不要回头",
-        title: "你往前走不要回头",
-        duration: const Duration(milliseconds: 31967),
-        artist: "林三七",
-        artUri: Uri.parse(
-            'https://img1.baidu.com/it/u=3052138256,3214274550&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=500')),
+      id: 'https://s3.amazonaws.com/scifri-segments/scifri201711241.mp3',
+      album: "Science Friday",
+      title: "From Cat Rheology To Operatic Incompetence",
+      artist: "Science Friday and WNYC Studios",
+      duration: const Duration(milliseconds: 2856950),
+      artUri: Uri.parse(
+          'https://media.wnyc.org/i/1400/1400/l/80/1/ScienceFriday_WNYCStudios_1400.jpg'),
+    ),
     MediaItem(
-        id: 'qinghua_zhouchuanxiong.mp3',
-        album: "青花",
-        title: "青花",
-        artist: "周传雄",
-        duration: const Duration(milliseconds: 25436),
-        artUri: Uri.parse(
-            'https://img2.baidu.com/it/u=3022312323,1267021894&fm=253&fmt=auto&app=120&f=JPEG?w=889&h=500')),
-    MediaItem(
-        id: 'tonghuazhen_chenyifaer.mp3',
-        album: "童话镇",
-        title: "童话镇",
-        artist: "陈一发儿",
-        duration: const Duration(milliseconds: 29825),
-        artUri: Uri.parse(
-            'https://img1.baidu.com/it/u=2532973369,265072396&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=500')),
-    MediaItem(
-        id: 'wodezhifeiji.mp3',
-        album: "我的纸飞机",
-        title: "我的纸飞机",
-        artist: "GooGo/王只睿",
-        duration: const Duration(milliseconds: 43461),
-        artUri: Uri.parse(
-            'https://img2.baidu.com/it/u=1100349303,2680199441&fm=253&fmt=auto&app=120&f=JPEG?w=799&h=500')),
-    MediaItem(
-        id: 'yi_qu_xiang_sai-ban_yang323.mp3',
-        album: "一曲相思",
-        title: "一曲相思",
-        artist: "半阳",
-        duration: const Duration(milliseconds: 37483),
-        artUri: Uri.parse(
-            'https://img1.baidu.com/it/u=690405603,3391326750&fm=253&fmt=auto&app=120&f=JPEG?w=889&h=500')),
+      id: 'https://s3.amazonaws.com/scifri-segments/scifri202011274.mp3',
+      album: "Science Friday",
+      title: "Laugh Along At Home With The Ig Nobel Awards",
+      artist: "Science Friday and WNYC Studios",
+      duration: const Duration(milliseconds: 1791883),
+      artUri: Uri.parse(
+          'https://media.wnyc.org/i/1400/1400/l/80/1/ScienceFriday_WNYCStudios_1400.jpg'),
+    )
   ];
 
   int _currentIndex = 0;
@@ -163,12 +198,13 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
               MediaControl.skipToNext,
             ],
             bufferedPosition: _duration,
-            updatePosition:
-                await _audioPlayer.getCurrentPosition() as Duration));
+            updatePosition: currentPosition));
         _isLoading = false;
       } else if (state == PlayerState.paused) {
         playbackState.add(playbackState.value.copyWith(
           processingState: AudioProcessingState.ready,
+          bufferedPosition: _duration,
+          updatePosition: currentPosition,
           playing: false,
           controls: [
             MediaControl.skipToPrevious,
@@ -198,7 +234,7 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
       ));
       mediaItem.add(_playlist[_currentIndex]);
 
-      await _audioPlayer.play(AssetSource(_playlist[_currentIndex].id));
+      await _audioPlayer.play(UrlSource(_playlist[_currentIndex].id));
     }
     playbackState.add(playbackState.value.copyWith(
       processingState: AudioProcessingState.ready,
@@ -386,58 +422,31 @@ class MediaLibrary {
     ],
     albumsRootId: [
       MediaItem(
-        id: 'https://www.joy127.com/url/108983.mp3',
-        album: "三生三幸",
-        title: "三生三幸",
-        artist: "程响",
-        duration: const Duration(milliseconds: 15307),
+        id: 'https://s3.amazonaws.com/scifri-episodes/scifri20181123-episode.mp3',
+        album: "Science Friday",
+        title: "A Salute To Head-Scratching Science",
+        artist: "Science Friday and WNYC Studios",
+        duration: const Duration(milliseconds: 5739820),
         artUri: Uri.parse(
-            'https://joy127.jstools.net/link/pic?type=kugou&id=99fd95b96a63815a788687a13d74ff63'),
+            'https://media.wnyc.org/i/1400/1400/l/80/1/ScienceFriday_WNYCStudios_1400.jpg'),
       ),
       MediaItem(
-        id: 'https://stream.556600.com/AE/bishangguan_dengshenmejun.mp3',
-        album: "壁上观",
-        title: "壁上观",
-        artist: "等什么君",
-        duration: const Duration(milliseconds: 32150),
+        id: 'https://s3.amazonaws.com/scifri-segments/scifri201711241.mp3',
+        album: "Science Friday",
+        title: "From Cat Rheology To Operatic Incompetence",
+        artist: "Science Friday and WNYC Studios",
+        duration: const Duration(milliseconds: 2856950),
         artUri: Uri.parse(
-            'https://img2.baidu.com/it/u=581948488,1876498694&fm=253&fmt=auto&app=120&f=JPEG?w=766&h=500'),
+            'https://media.wnyc.org/i/1400/1400/l/80/1/ScienceFriday_WNYCStudios_1400.jpg'),
       ),
       MediaItem(
-        id: 'https://www.joy127.com/url/109333.mp3',
-        album: "人间烟火",
-        title: "人间烟火",
-        artist: "程响",
-        duration: const Duration(milliseconds: 35664),
+        id: 'https://s3.amazonaws.com/scifri-segments/scifri202011274.mp3',
+        album: "Science Friday",
+        title: "Laugh Along At Home With The Ig Nobel Awards",
+        artist: "Science Friday and WNYC Studios",
+        duration: const Duration(milliseconds: 1791883),
         artUri: Uri.parse(
-            'https://img0.baidu.com/it/u=1267470360,95321030&fm=253&fmt=auto&app=120&f=JPEG?w=723&h=500'),
-      ),
-      MediaItem(
-        id: 'https://stream.556600.com/AD/qinghua_zhouchuanxiong.mp3',
-        album: "青花",
-        title: "青花",
-        artist: "周传雄",
-        duration: const Duration(milliseconds: 25436),
-        artUri: Uri.parse(
-            'https://i0.hdslb.com/bfs/archive/eff3b8e4b76279c47327f3f913d126fdffedacd4.jpg'),
-      ),
-      MediaItem(
-        id: 'https://stream.556600.com/AD/mengxingshifen_wubai.mp3',
-        album: "梦醒时分",
-        title: "梦醒时分",
-        artist: "伍佰",
-        duration: const Duration(milliseconds: 32359),
-        artUri: Uri.parse(
-            'https://i2.hdslb.com/bfs/archive/2026cc3e8635bb9b790a16d69a509061f25e1145.jpg'),
-      ),
-      MediaItem(
-        id: 'https://stream.556600.com/AC/niwangqianzoubuyaohuitou_linsanqi.mp3',
-        album: "你往前走不要回头",
-        title: "你往前走不要回头",
-        artist: "林三七",
-        duration: const Duration(milliseconds: 31967),
-        artUri: Uri.parse(
-            'https://img0.baidu.com/it/u=1440398448,3982887716&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=500'),
+            'https://media.wnyc.org/i/1400/1400/l/80/1/ScienceFriday_WNYCStudios_1400.jpg'),
       ),
     ],
   };
@@ -449,4 +458,5 @@ abstract class AudioPlayerHandler implements AudioHandler {
   ValueStream<double> get volume;
   Future<void> setVolume(double volume);
   ValueStream<double> get speed;
+  Stream<Duration> get durationStream;
 }
