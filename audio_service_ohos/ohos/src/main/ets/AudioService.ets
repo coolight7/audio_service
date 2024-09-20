@@ -144,13 +144,24 @@ export default class AudioService {
         aVPlaybackState.state = avSession.PlaybackState.PLAYBACK_STATE_PAUSE
         this.stopContinuousTask()
       }
+      let processingState = mediaItem.get('processingState')
       if (playing) {
         aVPlaybackState.position = {
           elapsedTime: mediaItem.get('updatePosition'),
           updateTime: new Date().getTime()
         }
+        //播放完成初始化进度条
+      } else if (processingState == AudioProcessingState.completed) {
+        aVPlaybackState.position = {
+          elapsedTime: 0,
+          updateTime: new Date().getTime()
+        }
       }
       aVPlaybackState.loopMode = mediaItem.get('repeatMode')
+      if (mediaItem.has('speed')) {
+        let speed: number = mediaItem.get('speed')
+        aVPlaybackState.speed = speed
+      }
       if (this.session == null && playing) {
         await this.createSession();
       }

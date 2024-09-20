@@ -69,7 +69,7 @@ class MainScreen extends StatelessWidget {
       _audioHandler.mediaItem.map((item) => item?.duration).distinct();
   Stream<PositionData> get _positionDataStream =>
       Rx.combineLatest3<Duration, Duration, Duration?, PositionData>(
-          AudioService.position,
+          _audioHandler.durationStream,
           _bufferedPositionStream,
           _durationStream,
           (position, bufferedPosition, duration) => PositionData(
