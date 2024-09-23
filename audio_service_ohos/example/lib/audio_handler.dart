@@ -340,7 +340,9 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
     if (speed == 0.5 || speed == 1.5) {
       return;
     }
-    playbackState.add(playbackState.value.copyWith(speed: speed));
+    playbackState.add(playbackState.value.copyWith(
+        speed: speed,
+        updatePosition: currentPosition));
     this.speed.add(speed);
     await _audioPlayer.setPlaybackRate(speed);
   }
