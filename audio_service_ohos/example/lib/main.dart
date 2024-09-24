@@ -326,15 +326,15 @@ class ControlButtons extends StatelessWidget {
         StreamBuilder<double>(
           stream: audioHandler.speed,
           builder: (context, snapshot) => IconButton(
-            icon: Text("${snapshot.data?.toStringAsFixed(1)}x",
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            icon: Text("${snapshot.data?.toStringAsFixed(2)}x",
+                style: const TextStyle(fontWeight: FontWeight.bold,fontSize: 13)),
             onPressed: () {
               showSliderDialog(
                 context: context,
                 title: "Adjust speed",
-                divisions: 10,
+                divisions: 6,
                 min: 0.5,
-                max: 1.5,
+                max: 2,
                 value: audioHandler.speed.value,
                 stream: audioHandler.speed,
                 onChanged: audioHandler.setSpeed,
