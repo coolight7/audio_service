@@ -20,9 +20,11 @@ packages:
   audio_service_platform_interface:
     dependency: "direct main"
     description:
-      path: "../audio_service_platform_interface"
-      relative: true
-    source: path
+      path: audio_service_platform_interface
+      ref: HEAD
+      resolved-ref: "508022bb087e8a553833bc23b5e18aeddd65dff3"
+      url: "https://github.com/coolight7/audio_service"
+    source: git
     version: "0.1.2"
   boolean_selector:
     dependency: transitive

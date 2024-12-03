@@ -15,7 +15,7 @@
     },
     {
       "name": "audio_service_platform_interface",
-      "rootUri": "../../audio_service_platform_interface",
+      "rootUri": "file:///Users/coolight/.pub-cache/git/audio_service-508022bb087e8a553833bc23b5e18aeddd65dff3/audio_service_platform_interface",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
@@ -260,7 +260,7 @@
       "languageVersion": "2.14"
     }
   ],
-  "generated": "2024-12-02T17:38:22.934524Z",
+  "generated": "2024-12-03T16:39:48.541651Z",
   "generator": "pub",
   "generatorVersion": "3.4.0",
   "flutterRoot": "file:///Users/coolight/0Acoolight/app/flutter-oh",

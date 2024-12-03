@@ -147,7 +147,7 @@
     },
     {
       "name": "flutter",
-      "rootUri": "file:///Users/coolight/0Acoolight/app/flutterSDK/flutter/packages/flutter",
+      "rootUri": "file:///Users/coolight/0Acoolight/app/flutter-oh/packages/flutter",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
@@ -165,13 +165,13 @@
     },
     {
       "name": "flutter_test",
-      "rootUri": "file:///Users/coolight/0Acoolight/app/flutterSDK/flutter/packages/flutter_test",
+      "rootUri": "file:///Users/coolight/0Acoolight/app/flutter-oh/packages/flutter_test",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
     {
       "name": "flutter_web_plugins",
-      "rootUri": "file:///Users/coolight/0Acoolight/app/flutterSDK/flutter/packages/flutter_web_plugins",
+      "rootUri": "file:///Users/coolight/0Acoolight/app/flutter-oh/packages/flutter_web_plugins",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
@@ -201,13 +201,13 @@
     },
     {
       "name": "leak_tracker",
-      "rootUri": "file:///Users/coolight/.pub-cache/hosted/pub.dev/leak_tracker-10.0.5",
+      "rootUri": "file:///Users/coolight/.pub-cache/hosted/pub.dev/leak_tracker-10.0.4",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
     {
       "name": "leak_tracker_flutter_testing",
-      "rootUri": "file:///Users/coolight/.pub-cache/hosted/pub.dev/leak_tracker_flutter_testing-3.0.5",
+      "rootUri": "file:///Users/coolight/.pub-cache/hosted/pub.dev/leak_tracker_flutter_testing-3.0.3",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
@@ -231,13 +231,13 @@
     },
     {
       "name": "material_color_utilities",
-      "rootUri": "file:///Users/coolight/.pub-cache/hosted/pub.dev/material_color_utilities-0.11.1",
+      "rootUri": "file:///Users/coolight/.pub-cache/hosted/pub.dev/material_color_utilities-0.8.0",
       "packageUri": "lib/",
       "languageVersion": "2.17"
     },
     {
       "name": "meta",
-      "rootUri": "file:///Users/coolight/.pub-cache/hosted/pub.dev/meta-1.15.0",
+      "rootUri": "file:///Users/coolight/.pub-cache/hosted/pub.dev/meta-1.12.0",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
@@ -255,9 +255,9 @@
     },
     {
       "name": "path_provider_android",
-      "rootUri": "file:///Users/coolight/.pub-cache/hosted/pub.dev/path_provider_android-2.2.14",
+      "rootUri": "file:///Users/coolight/.pub-cache/hosted/pub.dev/path_provider_android-2.2.10",
       "packageUri": "lib/",
-      "languageVersion": "3.5"
+      "languageVersion": "3.4"
     },
     {
       "name": "path_provider_foundation",
@@ -309,7 +309,7 @@
     },
     {
       "name": "sky_engine",
-      "rootUri": "file:///Users/coolight/0Acoolight/app/flutterSDK/flutter/bin/cache/pkg/sky_engine",
+      "rootUri": "file:///Users/coolight/0Acoolight/app/flutter-oh/bin/cache/pkg/sky_engine",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
@@ -351,9 +351,9 @@
     },
     {
       "name": "synchronized",
-      "rootUri": "file:///Users/coolight/.pub-cache/hosted/pub.dev/synchronized-3.3.0+3",
+      "rootUri": "file:///Users/coolight/.pub-cache/hosted/pub.dev/synchronized-3.1.0+1",
       "packageUri": "lib/",
-      "languageVersion": "3.5"
+      "languageVersion": "3.0"
     },
     {
       "name": "term_glyph",
@@ -363,15 +363,15 @@
     },
     {
       "name": "test_api",
-      "rootUri": "file:///Users/coolight/.pub-cache/hosted/pub.dev/test_api-0.7.2",
+      "rootUri": "file:///Users/coolight/.pub-cache/hosted/pub.dev/test_api-0.7.0",
       "packageUri": "lib/",
-      "languageVersion": "3.2"
+      "languageVersion": "3.0"
     },
     {
       "name": "typed_data",
-      "rootUri": "file:///Users/coolight/.pub-cache/hosted/pub.dev/typed_data-1.4.0",
+      "rootUri": "file:///Users/coolight/.pub-cache/hosted/pub.dev/typed_data-1.3.2",
       "packageUri": "lib/",
-      "languageVersion": "3.5"
+      "languageVersion": "2.17"
     },
     {
       "name": "uuid",
@@ -393,9 +393,9 @@
     },
     {
       "name": "video_player_android",
-      "rootUri": "file:///Users/coolight/.pub-cache/hosted/pub.dev/video_player_android-2.7.16",
+      "rootUri": "file:///Users/coolight/.pub-cache/hosted/pub.dev/video_player_android-2.7.1",
       "packageUri": "lib/",
-      "languageVersion": "3.5"
+      "languageVersion": "3.4"
     },
     {
       "name": "video_player_avfoundation",
@@ -423,7 +423,7 @@
     },
     {
       "name": "vm_service",
-      "rootUri": "file:///Users/coolight/.pub-cache/hosted/pub.dev/vm_service-14.2.5",
+      "rootUri": "file:///Users/coolight/.pub-cache/hosted/pub.dev/vm_service-14.2.1",
       "packageUri": "lib/",
       "languageVersion": "3.3"
     },
@@ -446,10 +446,10 @@
       "languageVersion": "2.19"
     }
   ],
-  "generated": "2024-12-03T16:32:24.525948Z",
+  "generated": "2024-12-03T16:40:02.311017Z",
   "generator": "pub",
-  "generatorVersion": "3.5.3",
-  "flutterRoot": "file:///Users/coolight/0Acoolight/app/flutterSDK/flutter",
-  "flutterVersion": "3.24.3",
+  "generatorVersion": "3.4.0",
+  "flutterRoot": "file:///Users/coolight/0Acoolight/app/flutter-oh",
+  "flutterVersion": "3.22.1-0.0.pre.16",
   "pubCache": "file:///Users/coolight/.pub-cache"
 }

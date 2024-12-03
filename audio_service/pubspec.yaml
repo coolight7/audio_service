@@ -45,7 +45,7 @@ dependencies:
       path: "audio_service_ohos"
   audio_session:
     git:
-      url: "https://gitee.com/openharmony-sig/flutter_audio_session.git"
+      url: "https://gitee.com/openharmony-sig/flutter_audio_session"
   rxdart: '>=0.26.0 <0.28.0'
   flutter_cache_manager: ^3.3.0
   clock: ^1.1.0

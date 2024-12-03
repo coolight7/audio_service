@@ -1,3 +1,7 @@
+audio_service_platform_interface
+3.0
+file:///Users/coolight/.pub-cache/git/audio_service-508022bb087e8a553833bc23b5e18aeddd65dff3/audio_service_platform_interface/
+file:///Users/coolight/.pub-cache/git/audio_service-508022bb087e8a553833bc23b5e18aeddd65dff3/audio_service_platform_interface/lib/
 args
 3.0
 file:///Users/coolight/.pub-cache/hosted/pub.dev/args-2.5.0/
@@ -162,10 +166,6 @@ flutter_web_plugins
 3.2
 file:///Users/coolight/0Acoolight/app/flutter-oh/packages/flutter_web_plugins/
 file:///Users/coolight/0Acoolight/app/flutter-oh/packages/flutter_web_plugins/lib/
-audio_service_platform_interface
-3.0
-file:///Users/coolight/0Acoolight/program/flutter/mymusic/plugins/audio_service/audio_service_platform_interface/
-file:///Users/coolight/0Acoolight/program/flutter/mymusic/plugins/audio_service/audio_service_platform_interface/lib/
 audio_service_web
 2.14
 file:///Users/coolight/0Acoolight/program/flutter/mymusic/plugins/audio_service/audio_service_web/
