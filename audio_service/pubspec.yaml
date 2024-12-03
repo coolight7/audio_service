@@ -31,11 +31,17 @@ dependencies:
   #     path: audio_service_web
 
   # Use these deps when publishing.
-  audio_service_platform_interface: ^0.1.1
-  audio_service_web: ^0.1.2
+  audio_service_platform_interface: 
+    git:
+      url: "https://github.com/coolight7/audio_service"
+      path: "audio_service_platform_interface"
+  audio_service_web: 
+    git:
+      url: "https://github.com/coolight7/audio_service"
+      path: "audio_service_web"
   audio_service_ohos: 
     git:
-      url: "https://gitee.com/openharmony-sig/fluttertpc_audio_service.git"
+      url: "https://github.com/coolight7/audio_service"
       path: "audio_service_ohos"
   audio_session:
     git:
