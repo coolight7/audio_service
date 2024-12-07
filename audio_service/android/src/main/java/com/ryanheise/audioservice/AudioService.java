@@ -112,9 +112,13 @@ public class AudioService extends MediaBrowserServiceCompat {
     }
 
     public static int toKeyCode(long action) {
-        if (action == PlaybackStateCompat.ACTION_PLAY) {
-            return KEYCODE_BYPASS_PLAY;
-        } else if (action == PlaybackStateCompat.ACTION_PAUSE) {
+        // 使用自定义码值会导致前台服务停止时无法收到通知栏点击事件（部分国产系统）
+        // 使用自定义码值是为了区分通知栏播放按钮和媒体按键的点击事件
+        // 但区分之后的具体作用还不清楚，暂时改回系统码值
+//        if (action == PlaybackStateCompat.ACTION_PLAY) {
+//            return KEYCODE_BYPASS_PLAY;
+//        } else
+        if (action == PlaybackStateCompat.ACTION_PAUSE) {
             return KEYCODE_BYPASS_PAUSE;
         } else {
             return PlaybackStateCompat.toKeyCode(action);
@@ -894,6 +898,10 @@ public class AudioService extends MediaBrowserServiceCompat {
     }
 
     public class MediaSessionCallback extends MediaSessionCompat.Callback {
+        private static final long CLICK_TIMEOUT = 500; // 超时时间
+        private int headSetHookClickCount = 0;
+        private long lastHeadSetHookClickTime = 0;
+
         @Override
         public void onAddQueueItem(MediaDescriptionCompat description) {
             if (listener == null) return;
@@ -1004,13 +1012,35 @@ public class AudioService extends MediaBrowserServiceCompat {
                 case KeyEvent.KEYCODE_MEDIA_PLAY:
                 case KeyEvent.KEYCODE_MEDIA_PAUSE:
                     // These are the "genuine" media button click events
+                    listener.onClick(eventToButton(event));
+                    break;
                 case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
                 case KeyEvent.KEYCODE_HEADSETHOOK:
-                    listener.onClick(eventToButton(event));
+                    long currentTime = System.currentTimeMillis();
+                    if (currentTime - lastHeadSetHookClickTime < CLICK_TIMEOUT) {
+                        headSetHookClickCount++;
+                    } else {
+                        headSetHookClickCount = 1;
+                    }
+                    lastHeadSetHookClickTime = currentTime;
+                    resetHeadSetHookClickCount();
                     break;
                 }
             }
             return true;
+        }
+
+        private void resetHeadSetHookClickCount() {
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                if (headSetHookClickCount == 1) {
+                    listener.onClick(MediaButton.media);
+                } else if (headSetHookClickCount == 2) {
+                    listener.onSkipToNext();
+                } else if (headSetHookClickCount == 3) {
+                    listener.onSkipToPrevious();
+                }
+                headSetHookClickCount = 0;
+            }, CLICK_TIMEOUT);
         }
 
         private MediaButton eventToButton(KeyEvent event) {

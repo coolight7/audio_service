@@ -33,4 +33,16 @@ public class AudioServiceFragmentActivity extends FlutterFragmentActivity {
     public boolean shouldDestroyEngineWithHost() {
         return false;
     }
+
+    // Make this protected method public
+    @Override
+    public String getInitialRoute() {
+        return super.getInitialRoute();
+    }
+
+    // Make this protected method public
+    @Override
+    public boolean shouldHandleDeeplinking() {
+        return super.shouldHandleDeeplinking();
+    }
 }
