@@ -41,7 +41,7 @@ static NSMutableDictionary *nowPlayingInfo = nil;
         AudioServicePlugin *instance = [[AudioServicePlugin alloc] initWithRegistrar:registrar];
         [registrar addMethodCallDelegate:instance channel:instance.channel];
         [plugins addObject:instance];
-        if (!handlerChannel) {
+        // if (!handlerChannel) {
             processingState = ApsIdle;
             position = @(0);
             bufferedPosition = @(0);
@@ -55,7 +55,7 @@ static NSMutableDictionary *nowPlayingInfo = nil;
                 methodChannelWithName:@"com.ryanheise.audio_service.handler.methods"
                       binaryMessenger:[registrar messenger]];
             [registrar addMethodCallDelegate:instance channel:handlerChannel];
-        }
+        // }
     }
 }
 
@@ -130,7 +130,7 @@ static NSMutableDictionary *nowPlayingInfo = nil;
     // Rating
     [commandCenter.ratingCommand setEnabled:NO];
     // Feedback
-    [commandCenter.likeCommand setEnabled:NO];
+    // [commandCenter.likeCommand setEnabled:NO];
     [commandCenter.dislikeCommand setEnabled:NO];
     [commandCenter.bookmarkCommand setEnabled:NO];
 }

@@ -1,3 +1,12 @@
+## 0.18.15
+
+* Add deep link support for FlutterFragmentActivity (@jan-milovanovic).
+* Fix JDK 21 compile error.
+
+## 0.18.14
+
+* Support rxdart 0.28.x.
+
 ## 0.18.13
 
 * Fix Android NPE in sendNotificationClicked and onConnected.

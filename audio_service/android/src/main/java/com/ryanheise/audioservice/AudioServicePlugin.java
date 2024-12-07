@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 
 import io.flutter.embedding.android.FlutterActivity;
+import io.flutter.embedding.android.FlutterFragmentActivity;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
@@ -75,6 +76,20 @@ public class AudioServicePlugin implements FlutterPlugin, ActivityAware {
             String initialRoute = null;
             if (context instanceof FlutterActivity) {
                 final FlutterActivity activity = (FlutterActivity)context;
+                initialRoute = activity.getInitialRoute();
+                if (initialRoute == null) {
+                    if (activity.shouldHandleDeeplinking()) {
+                        Uri data = activity.getIntent().getData();
+                        if (data != null) {
+                            initialRoute = data.getPath();
+                            if (data.getQuery() != null && !data.getQuery().isEmpty()) {
+                                initialRoute += "?" + data.getQuery();
+                            }
+                        }
+                    }
+                }
+            } else if (context instanceof AudioServiceFragmentActivity) {
+                final AudioServiceFragmentActivity activity = (AudioServiceFragmentActivity)context;
                 initialRoute = activity.getInitialRoute();
                 if (initialRoute == null) {
                     if (activity.shouldHandleDeeplinking()) {
