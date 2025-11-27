@@ -17,10 +17,6 @@ dependencies:
     git:
       url: https://github.com/coolight7/audio_service
       path: audio_service_platform_interface
-  audio_service_web:
-    git:
-      url: https://github.com/coolight7/audio_service
-      path: audio_service_web
 
   # Use these deps when pushing to origin (for the benefit of testers)
   # audio_service_platform_interface:
