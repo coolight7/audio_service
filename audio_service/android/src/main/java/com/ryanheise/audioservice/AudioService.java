@@ -59,6 +59,8 @@ public class AudioService extends MediaBrowserServiceCompat {
 
   private static final String SHARED_PREFERENCES_NAME =
       "audio_service_preferences";
+  private static final boolean isA14 =
+      Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q;
 
   private static final int NOTIFICATION_ID = 1124;
   private static final int REQUEST_CONTENT_INTENT = 1000;
@@ -124,7 +126,8 @@ public class AudioService extends MediaBrowserServiceCompat {
     // 使用自定义码值是为了区分通知栏播放按钮和媒体按键的点击事件
     // 但区分之后的具体作用还不清楚，暂时改回系统码值
     //        if (action == PlaybackStateCompat.ACTION_PLAY) {
-    //            return KEYCODE_BYPASS_PLAY;
+    //            return isA14 ? KeyEvent.KEYCODE_MEDIA_PLAY :
+    //            KEYCODE_BYPASS_PLAY;
     //        } else
     if (action == PlaybackStateCompat.ACTION_PAUSE) {
       return KEYCODE_BYPASS_PAUSE;
@@ -1099,8 +1102,14 @@ public class AudioService extends MediaBrowserServiceCompat {
       final KeyEvent event =
           (KeyEvent)mediaButtonEvent.getExtras().getParcelable(
               Intent.EXTRA_KEY_EVENT);
-      if (event.getAction() == KeyEvent.ACTION_DOWN) {
-        switch (event.getKeyCode()) {
+      final int action = event.getAction();
+      final int keyCode = event.getKeyCode();
+      if (isA14 && keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
+        onPlay();
+        return true;
+      }
+      if (action == KeyEvent.ACTION_DOWN) {
+        switch (keyCode) {
         case KEYCODE_BYPASS_PLAY:
           onPlay();
           break;
