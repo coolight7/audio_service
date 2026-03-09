@@ -35,6 +35,11 @@ class MethodChannelAudioService extends AudioServicePlatform {
   }
 
   @override
+  Future<void> forceStop(ForceStopRequest request) async {
+    await handlerChannel.invokeMethod<void>('forceStop', request.toMap());
+  }
+
+  @override
   Future<void> androidForceEnableMediaButtons(
       AndroidForceEnableMediaButtonsRequest request) async {
     await handlerChannel.invokeMethod<void>(
@@ -53,6 +58,12 @@ class MethodChannelAudioService extends AudioServicePlatform {
       SetAndroidPlaybackInfoRequest request) async {
     await handlerChannel.invokeMethod<void>(
         'setAndroidPlaybackInfo', request.toMap());
+  }
+
+  @override
+  Future<void> evictArtworkCache(EvictArtworkCacheRequest request) async {
+    await handlerChannel.invokeMethod<void>(
+        'evictArtworkCache', request.toMap());
   }
 
   @override

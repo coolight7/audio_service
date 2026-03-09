@@ -1226,6 +1226,15 @@ class AudioService {
     await _platform.stopService(const StopServiceRequest());
   }
 
+  /// Force stops the service & removes notification.
+  static Future<void> forceStop() async {
+    await _platform.forceStop(const ForceStopRequest());
+  }
+
+  static Future<void> evictArtworkCache() async {
+    await _platform.evictArtworkCache(const EvictArtworkCacheRequest());
+  }
+
   static Future<void> _loadAllArtwork(List<MediaItem> queue) async {
     for (var mediaItem in queue) {
       await _loadArtwork(mediaItem);

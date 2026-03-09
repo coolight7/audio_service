@@ -29,6 +29,11 @@ class NoOpAudioService extends AudioServicePlatform {
   }
 
   @override
+  Future<void> forceStop(ForceStopRequest request) {
+    return SynchronousFuture(null);
+  }
+
+  @override
   Future<void> androidForceEnableMediaButtons(
       AndroidForceEnableMediaButtonsRequest request) {
     return SynchronousFuture(null);
@@ -41,6 +46,11 @@ class NoOpAudioService extends AudioServicePlatform {
 
   @override
   Future<void> setAndroidPlaybackInfo(SetAndroidPlaybackInfoRequest request) {
+    return SynchronousFuture(null);
+  }
+
+  @override
+  Future<void> evictArtworkCache(EvictArtworkCacheRequest request) {
     return SynchronousFuture(null);
   }
 

@@ -49,6 +49,10 @@ void main() {
       throwsUnimplementedError,
     );
     expect(
+      () => platform.forceStop(const ForceStopRequest()),
+      throwsUnimplementedError,
+    );
+    expect(
       () => platform.setAndroidPlaybackInfo(const SetAndroidPlaybackInfoRequest(
           playbackInfo: LocalAndroidPlaybackInfoMessage())),
       throwsUnimplementedError,
