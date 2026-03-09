@@ -939,6 +939,10 @@ public class AudioServicePlugin implements FlutterPlugin, ActivityAware {
           break;
         }
         case "setState": {
+          if (AudioService.instance == null) {
+            result.success(null);
+            break;
+          }
           Map<?, ?> stateMap = (Map<?, ?>)args.get("state");
           AudioProcessingState processingState =
               AudioProcessingState
