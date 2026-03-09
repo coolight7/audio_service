@@ -47,66 +47,82 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
 
+import io.flutter.embedding.android.FlutterActivity;
+import io.flutter.embedding.android.FlutterFragmentActivity;
+import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
+import io.flutter.embedding.engine.plugins.activity.ActivityAware;
+import io.flutter.plugin.common.MethodCall;
+import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
+import io.flutter.plugin.common.MethodChannel.Result;
+import io.flutter.plugin.common.PluginRegistry.NewIntentListener;
+import io.flutter.plugin.common.BinaryMessenger;
+
+import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.embedding.engine.FlutterEngineCache;
+import io.flutter.embedding.engine.dart.DartExecutor;
+
+import android.net.Uri;
+import android.util.Log;
+
 /**
  * AudioservicePlugin
  */
 public class AudioServicePlugin implements FlutterPlugin, ActivityAware {
-  private static String flutterEngineId = "audio_service_engine";
-  /**
-   * Must be called BEFORE any FlutterEngine is created. e.g. in Application
-   * class.
-   */
-  public static void setFlutterEngineId(String id) { flutterEngineId = id; }
-  public static String getFlutterEngineId() { return flutterEngineId; }
-  public static synchronized FlutterEngine getFlutterEngine(Context context) {
-    FlutterEngine flutterEngine =
-        FlutterEngineCache.getInstance().get(flutterEngineId);
-    if (flutterEngine == null) {
-      // XXX: The constructor triggers onAttachedToEngine so this variable
-      // doesn't help us. Maybe need a boolean flag to tell us we're currently
-      // loading the main flutter engine.
-      flutterEngine = new FlutterEngine(context.getApplicationContext());
-      String initialRoute = null;
-      if (context instanceof FlutterActivity) {
-        final FlutterActivity activity = (FlutterActivity)context;
-        initialRoute = activity.getInitialRoute();
-        if (initialRoute == null) {
-          if (activity.shouldHandleDeeplinking()) {
-            Uri data = activity.getIntent().getData();
-            if (data != null) {
-              initialRoute = data.getPath();
-              if (data.getQuery() != null && !data.getQuery().isEmpty()) {
-                initialRoute += "?" + data.getQuery();
-              }
-            }
-          }
-        }
-      } else if (context instanceof AudioServiceFragmentActivity) {
-        final AudioServiceFragmentActivity activity =
-            (AudioServiceFragmentActivity)context;
-        initialRoute = activity.getInitialRoute();
-        if (initialRoute == null) {
-          if (activity.shouldHandleDeeplinking()) {
-            Uri data = activity.getIntent().getData();
-            if (data != null) {
-              initialRoute = data.getPath();
-              if (data.getQuery() != null && !data.getQuery().isEmpty()) {
-                initialRoute += "?" + data.getQuery();
-              }
-            }
-          }
-        }
-      }
-      if (initialRoute == null) {
-        initialRoute = "/";
-      }
-      flutterEngine.getNavigationChannel().setInitialRoute(initialRoute);
-      flutterEngine.getDartExecutor().executeDartEntrypoint(
-          DartExecutor.DartEntrypoint.createDefault());
-      FlutterEngineCache.getInstance().put(flutterEngineId, flutterEngine);
+    private static String flutterEngineId = "audio_service_engine";
+    /** Must be called BEFORE any FlutterEngine is created. e.g. in Application class. */
+    public static void setFlutterEngineId(String id) {
+        flutterEngineId = id;
     }
-    return flutterEngine;
-  }
+    public static String getFlutterEngineId() {
+        return flutterEngineId;
+    }
+    public static synchronized FlutterEngine getFlutterEngine(Context context) {
+        FlutterEngine flutterEngine = FlutterEngineCache.getInstance().get(flutterEngineId);
+        if (flutterEngine == null) {
+            // XXX: The constructor triggers onAttachedToEngine so this variable doesn't help us.
+            // Maybe need a boolean flag to tell us we're currently loading the main flutter engine.
+            flutterEngine = new FlutterEngine(context.getApplicationContext());
+            String initialRoute = null;
+            if (context instanceof FlutterActivity) {
+                final FlutterActivity activity = (FlutterActivity)context;
+                initialRoute = activity.getInitialRoute();
+                if (initialRoute == null) {
+                    if (activity.shouldHandleDeeplinking()) {
+                        Uri data = activity.getIntent().getData();
+                        if (data != null) {
+                            initialRoute = data.getPath();
+                            if (data.getQuery() != null && !data.getQuery().isEmpty()) {
+                                initialRoute += "?" + data.getQuery();
+                            }
+                        }
+                    }
+                }
+            } else if (context instanceof AudioServiceFragmentActivity) {
+                final AudioServiceFragmentActivity activity = (AudioServiceFragmentActivity)context;
+                initialRoute = activity.getInitialRoute();
+                if (initialRoute == null) {
+                    if (activity.shouldHandleDeeplinking()) {
+                        Uri data = activity.getIntent().getData();
+                        if (data != null) {
+                            initialRoute = data.getPath();
+                            if (data.getQuery() != null && !data.getQuery().isEmpty()) {
+                                initialRoute += "?" + data.getQuery();
+                            }
+                        }
+                    }
+                }
+            }
+            if (initialRoute == null) {
+                initialRoute = "/";
+            }
+            flutterEngine.getNavigationChannel().setInitialRoute(initialRoute);
+            flutterEngine.getDartExecutor().executeDartEntrypoint(DartExecutor.DartEntrypoint.createDefault());
+            FlutterEngineCache.getInstance().put(flutterEngineId, flutterEngine);
+        }
+        return flutterEngine;
+    }
 
   public static synchronized void disposeFlutterEngine() {
     for (ClientInterface clientInterface : clientInterfaces) {
@@ -212,46 +228,42 @@ public class AudioServicePlugin implements FlutterPlugin, ActivityAware {
   // INSTANCE FIELDS AND METHODS
   //
 
-  private Context applicationContext;
-  private FlutterPluginBinding flutterPluginBinding;
-  private ActivityPluginBinding activityPluginBinding;
-  private NewIntentListener newIntentListener;
-  private ClientInterface clientInterface;
-  private final MediaBrowserCompat.ConnectionCallback
-      connectionCallback = new MediaBrowserCompat.ConnectionCallback() {
-    @Override
-    public void onConnected() {
-      if (applicationContext == null)
-        return;
-      try {
-        MediaSessionCompat.Token token = mediaBrowser.getSessionToken();
-        mediaController = new MediaControllerCompat(applicationContext, token);
-        Activity activity =
-            mainClientInterface != null ? mainClientInterface.activity : null;
-        if (activity != null) {
-          MediaControllerCompat.setMediaController(activity, mediaController);
+    private Context applicationContext;
+    private FlutterPluginBinding flutterPluginBinding;
+    private ActivityPluginBinding activityPluginBinding;
+    private NewIntentListener newIntentListener;
+    private ClientInterface clientInterface;
+    private final MediaBrowserCompat.ConnectionCallback connectionCallback = new MediaBrowserCompat.ConnectionCallback() {
+        @Override
+        public void onConnected() {
+            if (applicationContext == null) return; 
+            try {
+                MediaSessionCompat.Token token = mediaBrowser.getSessionToken();
+                mediaController = new MediaControllerCompat(applicationContext, token);
+                Activity activity = mainClientInterface != null ? mainClientInterface.activity : null;
+                if (activity != null) {
+                    MediaControllerCompat.setMediaController(activity, mediaController);
+                }
+                mediaController.registerCallback(controllerCallback);
+                // PlaybackStateCompat state = mediaController.getPlaybackState();
+                // controllerCallback.onPlaybackStateChanged(state);
+                // MediaMetadataCompat metadata = mediaController.getMetadata();
+                // controllerCallback.onQueueChanged(mediaController.getQueue());
+                // controllerCallback.onMetadataChanged(metadata);
+                if (configureResult != null) {
+                    configureResult.success(mapOf());
+                    configureResult = null;
+                }
+            } catch (Exception e) {
+                System.out.println("onConnected error: " + e.getMessage());
+                e.printStackTrace();
+                if (configureResult != null) {
+                    configureResult.error("onConnected error: " + e.getMessage(), null, null);
+                } else {
+                    clientInterface.setServiceConnectionFailed(true);
+                }
+            }
         }
-        mediaController.registerCallback(controllerCallback);
-        // PlaybackStateCompat state = mediaController.getPlaybackState();
-        // controllerCallback.onPlaybackStateChanged(state);
-        // MediaMetadataCompat metadata = mediaController.getMetadata();
-        // controllerCallback.onQueueChanged(mediaController.getQueue());
-        // controllerCallback.onMetadataChanged(metadata);
-        if (configureResult != null) {
-          configureResult.success(mapOf());
-          configureResult = null;
-        }
-      } catch (Exception e) {
-        System.out.println("onConnected error: " + e.getMessage());
-        e.printStackTrace();
-        if (configureResult != null) {
-          configureResult.error("onConnected error: " + e.getMessage(), null,
-                                null);
-        } else {
-          clientInterface.setServiceConnectionFailed(true);
-        }
-      }
-    }
 
     @Override
     public void onConnectionSuspended() {
@@ -422,16 +434,13 @@ public class AudioServicePlugin implements FlutterPlugin, ActivityAware {
     });
   }
 
-  private void sendNotificationClicked() {
-    Activity activity = clientInterface.activity;
-    if (audioHandlerInterface != null &&
-        activity.getIntent().getAction() != null) {
-      boolean clicked = activity.getIntent().getAction().equals(
-          AudioService.NOTIFICATION_CLICK_ACTION);
-      audioHandlerInterface.invokeMethod("onNotificationClicked",
-                                         mapOf("clicked", clicked));
+    private void sendNotificationClicked() {
+        Activity activity = clientInterface.activity;
+        if (audioHandlerInterface != null && activity.getIntent().getAction() != null) {
+            boolean clicked = activity.getIntent().getAction().equals(AudioService.NOTIFICATION_CLICK_ACTION);
+            audioHandlerInterface.invokeMethod("onNotificationClicked", mapOf("clicked", clicked));
+        }
     }
-  }
 
   private static class ClientInterface implements MethodCallHandler {
     private Context context;
@@ -899,206 +908,204 @@ public class AudioServicePlugin implements FlutterPlugin, ActivityAware {
       disposeFlutterEngine();
     }
 
-    @Override
-    public void onMethodCall(MethodCall call, Result result) {
-      try {
-        Map<?, ?> args = (Map<?, ?>)call.arguments;
-        switch (call.method) {
-        case "setMediaItem": {
-          Executors.newSingleThreadExecutor().execute(() -> {
+        @Override
+        public void onMethodCall(MethodCall call, Result result) {
             try {
-              Map<?, ?> rawMediaItem = (Map<?, ?>)args.get("mediaItem");
-              MediaMetadataCompat mediaMetadata =
-                  createMediaMetadata(rawMediaItem);
-              AudioService.instance.setMetadata(mediaMetadata);
-              handler.post(() -> result.success(null));
-            } catch (Exception e) {
-              handler.post(() -> {
-                result.error("UNEXPECTED_ERROR", "Unexpected error",
-                             Log.getStackTraceString(e));
-              });
-            }
-          });
-          break;
-        }
-        case "setQueue": {
-          Executors.newSingleThreadExecutor().execute(() -> {
-            try {
-              @SuppressWarnings("unchecked")
-              List<Map<?, ?>> rawQueue = (List<Map<?, ?>>)args.get("queue");
-              List<MediaSessionCompat.QueueItem> queue = raw2queue(rawQueue);
-              AudioService.instance.setQueue(queue);
-              handler.post(() -> result.success(null));
-            } catch (Exception e) {
-              handler.post(() -> {
-                result.error("UNEXPECTED_ERROR", "Unexpected error",
-                             Log.getStackTraceString(e));
-              });
-            }
-          });
-          break;
-        }
-        case "setState": {
-          if (AudioService.instance == null) {
-            result.success(null);
-            break;
-          }
-          Map<?, ?> stateMap = (Map<?, ?>)args.get("state");
-          AudioProcessingState processingState =
-              AudioProcessingState
-                  .values()[(Integer)stateMap.get("processingState")];
-          boolean playing = (Boolean)stateMap.get("playing");
-          @SuppressWarnings("unchecked")
-          List<Map<?, ?>> rawControls =
-              (List<Map<?, ?>>)stateMap.get("controls");
-          @SuppressWarnings("unchecked")
-          List<Object> compactActionIndexList =
-              (List<Object>)stateMap.get("androidCompactActionIndices");
-          @SuppressWarnings("unchecked")
-          List<Integer> rawSystemActions =
-              (List<Integer>)stateMap.get("systemActions");
-          long position = getLong(stateMap.get("updatePosition"));
-          long bufferedPosition = getLong(stateMap.get("bufferedPosition"));
-          float speed = (float)((double)((Double)stateMap.get("speed")));
-          long updateTimeSinceEpoch = stateMap.get("updateTime") == null
-                                          ? System.currentTimeMillis()
-                                          : getLong(stateMap.get("updateTime"));
-          Integer errorCode = (Integer)stateMap.get("errorCode");
-          String errorMessage = (String)stateMap.get("errorMessage");
-          int repeatMode = (Integer)stateMap.get("repeatMode");
-          int shuffleMode = (Integer)stateMap.get("shuffleMode");
-          Long queueIndex = getLong(stateMap.get("queueIndex"));
-          boolean captioningEnabled =
-              (Boolean)stateMap.get("captioningEnabled");
+                Map<?, ?> args = (Map<?, ?>)call.arguments;
+                switch (call.method) {
+                case "setMediaItem": {
+                    Executors.newSingleThreadExecutor().execute(() -> {
+                        try {
+                            Map<?, ?> rawMediaItem = (Map<?, ?>)args.get("mediaItem");
+                            MediaMetadataCompat mediaMetadata = createMediaMetadata(rawMediaItem);
+                            AudioService.instance.setMetadata(mediaMetadata);
+                            handler.post(() -> result.success(null));
+                        } catch (Exception e) {
+                            handler.post(() -> {
+                                result.error("UNEXPECTED_ERROR", "Unexpected error", Log.getStackTraceString(e));
+                            });
+                        }
+                    });
+                    break;
+                }
+                case "setQueue": {
+                    Executors.newSingleThreadExecutor().execute(() -> {
+                        try {
+                            @SuppressWarnings("unchecked") List<Map<?, ?>> rawQueue = (List<Map<?, ?>>) args.get("queue");
+                            List<MediaSessionCompat.QueueItem> queue = raw2queue(rawQueue);
+                            AudioService.instance.setQueue(queue);
+                            handler.post(() -> result.success(null));
+                        } catch (Exception e) {
+                            handler.post(() -> {
+                                result.error("UNEXPECTED_ERROR", "Unexpected error", Log.getStackTraceString(e));
+                            });
+                        }
+                    });
+                    break;
+                }
+                case "setState": {
+                    if (AudioService.instance == null) {
+                        result.success(null);
+                        break;
+                    }
+                    Map<?, ?> stateMap = (Map<?, ?>)args.get("state");
+                    AudioProcessingState processingState = AudioProcessingState.values()[(Integer)stateMap.get("processingState")];
+                    boolean playing = (Boolean)stateMap.get("playing");
+                    @SuppressWarnings("unchecked") List<Map<?, ?>> rawControls = (List<Map<?, ?>>)stateMap.get("controls");
+                    @SuppressWarnings("unchecked") List<Object> compactActionIndexList = (List<Object>)stateMap.get("androidCompactActionIndices");
+                    @SuppressWarnings("unchecked") List<Integer> rawSystemActions = (List<Integer>)stateMap.get("systemActions");
+                    long position = getLong(stateMap.get("updatePosition"));
+                    long bufferedPosition = getLong(stateMap.get("bufferedPosition"));
+                    float speed = (float)((double)((Double)stateMap.get("speed")));
+                    long updateTimeSinceEpoch = stateMap.get("updateTime") == null ? System.currentTimeMillis() : getLong(stateMap.get("updateTime"));
+                    Integer errorCode = (Integer)stateMap.get("errorCode");
+                    String errorMessage = (String)stateMap.get("errorMessage");
+                    int repeatMode = (Integer)stateMap.get("repeatMode");
+                    int shuffleMode = (Integer)stateMap.get("shuffleMode");
+                    Long queueIndex = getLong(stateMap.get("queueIndex"));
+                    boolean captioningEnabled = (Boolean)stateMap.get("captioningEnabled");
 
-          // On the flutter side, we represent the update time relative to the
-          // epoch. On the native side, we must represent the update time
-          // relative to the boot time.
-          long updateTimeSinceBoot = updateTimeSinceEpoch - bootTime;
+                    // On the flutter side, we represent the update time relative to the epoch.
+                    // On the native side, we must represent the update time relative to the boot time.
+                    long updateTimeSinceBoot = updateTimeSinceEpoch - bootTime;
 
-          List<MediaControl> actions = new ArrayList<>();
-          long actionBits = 0;
-          for (Map<?, ?> rawControl : rawControls) {
-            String resource = (String)rawControl.get("androidIcon");
-            String label = (String)rawControl.get("label");
-            long actionCode = 1 << ((Integer)rawControl.get("action"));
-            actionBits |= actionCode;
-            Map<?, ?> customActionMap =
-                (Map<?, ?>)rawControl.get("customAction");
-            CustomMediaAction customAction = null;
-            if (customActionMap != null) {
-              String name = (String)customActionMap.get("name");
-              Map<?, ?> extras = (Map<?, ?>)customActionMap.get("extras");
-              customAction = new CustomMediaAction(name, extras);
+                    List<MediaControl> actions = new ArrayList<>();
+                    long actionBits = 0;
+                    for (Map<?, ?> rawControl : rawControls) {
+                        String resource = (String)rawControl.get("androidIcon");
+                        String label = (String)rawControl.get("label");
+                        long actionCode = 1 << ((Integer)rawControl.get("action"));
+                        actionBits |= actionCode;
+                        Map<?, ?> customActionMap = (Map<?, ?>)rawControl.get("customAction");
+                        CustomMediaAction customAction = null;
+                        if (customActionMap != null) {
+                            String name = (String) customActionMap.get("name");
+                            Map<?, ?> extras = (Map<?, ?>) customActionMap.get("extras");
+                            customAction = new CustomMediaAction(name, extras);
+                        }
+                        actions.add(new MediaControl(resource, label, actionCode, customAction));
+                    }
+                    for (Integer rawSystemAction : rawSystemActions) {
+                        long actionCode = 1 << rawSystemAction;
+                        actionBits |= actionCode;
+                    }
+                    int[] compactActionIndices = null;
+                    if (compactActionIndexList != null) {
+                        compactActionIndices = new int[Math.min(AudioService.MAX_COMPACT_ACTIONS, compactActionIndexList.size())];
+                        for (int i = 0; i < compactActionIndices.length; i++)
+                            compactActionIndices[i] = (Integer)compactActionIndexList.get(i);
+                    }
+                    AudioService.instance.setState(
+                            actions,
+                            actionBits,
+                            compactActionIndices,
+                            processingState,
+                            playing,
+                            position,
+                            bufferedPosition,
+                            speed,
+                            updateTimeSinceBoot,
+                            errorCode,
+                            errorMessage,
+                            repeatMode,
+                            shuffleMode,
+                            captioningEnabled,
+                            queueIndex);
+                    result.success(null);
+                    break;
+                }
+                case "setAndroidPlaybackInfo": {
+                    Map<?, ?> playbackInfo = (Map<?, ?>)args.get("playbackInfo");
+                    final int playbackType = (Integer)playbackInfo.get("playbackType");
+                    final Integer volumeControlType = (Integer)playbackInfo.get("volumeControlType");
+                    final Integer maxVolume = (Integer)playbackInfo.get("maxVolume");
+                    final Integer volume = (Integer)playbackInfo.get("volume");
+                    AudioService.instance.setPlaybackInfo(playbackType, volumeControlType, maxVolume, volume);
+                    result.success(null);
+                    break;
+                }
+                case "notifyChildrenChanged": {
+                    String parentMediaId = (String)args.get("parentMediaId");
+                    Map<?, ?> options = (Map<?, ?>)args.get("options");
+                    AudioService.instance.notifyChildrenChanged(parentMediaId, mapToBundle(options));
+                    result.success(null);
+                    break;
+                }
+                case "androidForceEnableMediaButtons": {
+                    // Just play a short amount of silence. This convinces Android
+                    // that we are playing "real" audio so that it will route
+                    // media buttons to us.
+                    // See: https://issuetracker.google.com/issues/65344811
+                    if (silenceAudioTrack == null) {
+                        byte[] silence = new byte[2048];
+                        // TODO: Uncomment this after moving to a minSdkVersion of 21.
+                        /* AudioAttributes audioAttributes = new AudioAttributes.Builder() */
+                        /*     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC) */
+                        /*     .setUsage(AudioAttributes.USAGE_MEDIA) */
+                        /*     .build(); */
+                        /* AudioFormat audioFormat = new AudioFormat.Builder() */
+                        /*     .setChannelMask(AudioFormat.CHANNEL_CONFIGURATION_MONO) */
+                        /*     .setEncoding(AudioFormat.ENCODING_PCM_8BIT) */
+                        /*     .setSampleRate(SILENCE_SAMPLE_RATE) */
+                        /*     .build(); */
+                        /* silenceAudioTrack = new AudioTrack.Builder() */
+                        /*     .setAudioAttributes(audioAttributes) */
+                        /*     .setAudioFormat(audioFormat) */
+                        /*     .setBufferSizeInBytes(silence.length) */
+                        /*     .setTransferMode(AudioTrack.MODE_STATIC) */
+                        /*     .build(); */
+                        @SuppressWarnings("deprecation")
+                        final AudioTrack audioTrack = new AudioTrack(
+                                AudioManager.STREAM_MUSIC,
+                                SILENCE_SAMPLE_RATE,
+                                AudioFormat.CHANNEL_CONFIGURATION_MONO,
+                                AudioFormat.ENCODING_PCM_8BIT,
+                                silence.length,
+                                AudioTrack.MODE_STATIC);
+                        silenceAudioTrack = audioTrack;
+                        silenceAudioTrack.write(silence, 0, silence.length);
+                    }
+                    silenceAudioTrack.reloadStaticData();
+                    silenceAudioTrack.play();
+                    result.success(null);
+                    break;
+                }
+                case "setLockScreenArtwork": {
+                    final Boolean show = (Boolean) args.get("show");
+                    if (show != null && AudioService.instance != null) {
+                        AudioService.instance.setLockScreenArtwork(show);
+                    }
+                    result.success(null);
+                    break;
+                }
+                case "stopService": {
+                    if (AudioService.instance != null) {
+                        AudioService.instance.stop();
+                    }
+                    result.success(null);
+                    break;
+                }
+                case "forceStop": {
+                    if (AudioService.instance != null) {
+                        AudioService.instance.forceStop();
+                    }
+                    result.success(null);
+                    break;
+                }
+                
+                case "evictArtworkCache": {
+                    if (AudioService.instance != null) {
+                        AudioService.instance.evictArtworkCache();
+                    }
+                    result.success(null);
+                    break;
+                }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                result.error(e.getMessage(), null, null);
             }
-            actions.add(
-                new MediaControl(resource, label, actionCode, customAction));
-          }
-          for (Integer rawSystemAction : rawSystemActions) {
-            long actionCode = 1 << rawSystemAction;
-            actionBits |= actionCode;
-          }
-          int[] compactActionIndices = null;
-          if (compactActionIndexList != null) {
-            compactActionIndices =
-                new int[Math.min(AudioService.MAX_COMPACT_ACTIONS,
-                                 compactActionIndexList.size())];
-            for (int i = 0; i < compactActionIndices.length; i++)
-              compactActionIndices[i] = (Integer)compactActionIndexList.get(i);
-          }
-          AudioService.instance.setState(
-              actions, actionBits, compactActionIndices, processingState,
-              playing, position, bufferedPosition, speed, updateTimeSinceBoot,
-              errorCode, errorMessage, repeatMode, shuffleMode,
-              captioningEnabled, queueIndex);
-          result.success(null);
-          break;
         }
-        case "setAndroidPlaybackInfo": {
-          Map<?, ?> playbackInfo = (Map<?, ?>)args.get("playbackInfo");
-          final int playbackType = (Integer)playbackInfo.get("playbackType");
-          final Integer volumeControlType =
-              (Integer)playbackInfo.get("volumeControlType");
-          final Integer maxVolume = (Integer)playbackInfo.get("maxVolume");
-          final Integer volume = (Integer)playbackInfo.get("volume");
-          AudioService.instance.setPlaybackInfo(playbackType, volumeControlType,
-                                                maxVolume, volume);
-          result.success(null);
-          break;
-        }
-        case "notifyChildrenChanged": {
-          String parentMediaId = (String)args.get("parentMediaId");
-          Map<?, ?> options = (Map<?, ?>)args.get("options");
-          AudioService.instance.notifyChildrenChanged(parentMediaId,
-                                                      mapToBundle(options));
-          result.success(null);
-          break;
-        }
-        case "androidForceEnableMediaButtons": {
-          // Just play a short amount of silence. This convinces Android
-          // that we are playing "real" audio so that it will route
-          // media buttons to us.
-          // See: https://issuetracker.google.com/issues/65344811
-          if (silenceAudioTrack == null) {
-            byte[] silence = new byte[2048];
-            // TODO: Uncomment this after moving to a minSdkVersion of 21.
-            /* AudioAttributes audioAttributes = new AudioAttributes.Builder()
-             */
-            /*     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC) */
-            /*     .setUsage(AudioAttributes.USAGE_MEDIA) */
-            /*     .build(); */
-            /* AudioFormat audioFormat = new AudioFormat.Builder() */
-            /*     .setChannelMask(AudioFormat.CHANNEL_CONFIGURATION_MONO) */
-            /*     .setEncoding(AudioFormat.ENCODING_PCM_8BIT) */
-            /*     .setSampleRate(SILENCE_SAMPLE_RATE) */
-            /*     .build(); */
-            /* silenceAudioTrack = new AudioTrack.Builder() */
-            /*     .setAudioAttributes(audioAttributes) */
-            /*     .setAudioFormat(audioFormat) */
-            /*     .setBufferSizeInBytes(silence.length) */
-            /*     .setTransferMode(AudioTrack.MODE_STATIC) */
-            /*     .build(); */
-            @SuppressWarnings("deprecation")
-            final AudioTrack audioTrack =
-                new AudioTrack(AudioManager.STREAM_MUSIC, SILENCE_SAMPLE_RATE,
-                               AudioFormat.CHANNEL_CONFIGURATION_MONO,
-                               AudioFormat.ENCODING_PCM_8BIT, silence.length,
-                               AudioTrack.MODE_STATIC);
-            silenceAudioTrack = audioTrack;
-            silenceAudioTrack.write(silence, 0, silence.length);
-          }
-          silenceAudioTrack.reloadStaticData();
-          silenceAudioTrack.play();
-          result.success(null);
-          break;
-        }
-        case "stopService": {
-          if (AudioService.instance != null) {
-            AudioService.instance.stop();
-          }
-          result.success(null);
-          break;
-        }
-        case "forceStop": {
-          if (AudioService.instance != null) {
-            AudioService.instance.forceStop();
-          }
-          result.success(null);
-          break;
-        }
-        case "evictArtworkCache": {
-          if (AudioService.instance != null) {
-            AudioService.instance.evictArtworkCache();
-          }
-          result.success(null);
-          break;
-        }
-        }
-      } catch (Exception e) {
-        e.printStackTrace();
-        result.error(e.getMessage(), null, null);
-      }
-    }
 
     @UiThread
     public void invokeMethod(String method, Object arg) {

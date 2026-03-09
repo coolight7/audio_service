@@ -57,10 +57,22 @@ void main() {
     expect(futureEnded, false);
   });
 
+  test('forceStop is no-op', () async {
+    runFuture();
+    await platform.forceStop(const ForceStopRequest());
+    expect(futureEnded, false);
+  });
+
   test('androidForceEnableMediaButtons is no-op', () async {
     runFuture();
     await platform.androidForceEnableMediaButtons(
         const AndroidForceEnableMediaButtonsRequest());
+    expect(futureEnded, false);
+  });
+
+  test('setLockScreenArtwork is no-op', () async {
+    runFuture();
+    await platform.setLockScreenArtwork(true);
     expect(futureEnded, false);
   });
 
@@ -78,6 +90,12 @@ void main() {
     await platform.setAndroidPlaybackInfo(const SetAndroidPlaybackInfoRequest(
       playbackInfo: LocalAndroidPlaybackInfoMessage(),
     ));
+    expect(futureEnded, false);
+  });
+
+  test('evictArtworkCache is no-op', () async {
+    runFuture();
+    await platform.evictArtworkCache(const EvictArtworkCacheRequest());
     expect(futureEnded, false);
   });
 

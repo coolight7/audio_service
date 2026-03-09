@@ -110,6 +110,19 @@ void main() {
         )
       ]);
     });
+    
+    test('forceStop', () async {
+      const request = ForceStopRequest();
+      final methods = {'forceStop': null};
+      final channel = sendHandlerChannel.copyWith(methods);
+      await platform.forceStop(request);
+      expect(channel.log, [
+        isMethodCall(
+          'forceStop',
+          arguments: request.toMap(),
+        )
+      ]);
+    });
 
     test('androidForceEnableMediaButtons', () async {
       const request = AndroidForceEnableMediaButtonsRequest();
@@ -150,6 +163,19 @@ void main() {
       expect(channel.log, [
         isMethodCall(
           'setAndroidPlaybackInfo',
+          arguments: request.toMap(),
+        )
+      ]);
+    });
+
+    test('evictArtworkCache', () async {
+      const request = EvictArtworkCacheRequest();
+      final methods = {'evictArtworkCache': null};
+      final channel = sendHandlerChannel.copyWith(methods);
+      await platform.evictArtworkCache(request);
+      expect(channel.log, [
+        isMethodCall(
+          'evictArtworkCache',
           arguments: request.toMap(),
         )
       ]);

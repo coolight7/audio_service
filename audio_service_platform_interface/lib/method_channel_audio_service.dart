@@ -47,6 +47,12 @@ class MethodChannelAudioService extends AudioServicePlatform {
   }
 
   @override
+  Future<void> setLockScreenArtwork(bool show) async {
+    await handlerChannel
+        .invokeMethod<void>('setLockScreenArtwork', {'show': show});
+  }
+
+  @override
   Future<void> notifyChildrenChanged(
       NotifyChildrenChangedRequest request) async {
     await handlerChannel.invokeMethod<void>(

@@ -28,6 +28,8 @@ import android.util.LruCache;
 import android.util.Size;
 import android.view.KeyEvent;
 import androidx.annotation.RequiresApi;
+import androidx.core.app.ServiceCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.media.MediaBrowserServiceCompat;
@@ -57,58 +59,54 @@ public class AudioService extends MediaBrowserServiceCompat {
   public static final int CONTENT_STYLE_CATEGORY_LIST_ITEM_HINT_VALUE = 3;
   public static final int CONTENT_STYLE_CATEGORY_GRID_ITEM_HINT_VALUE = 4;
 
-  private static final String SHARED_PREFERENCES_NAME =
-      "audio_service_preferences";
-  private static final boolean isA14 =
-      Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q;
+    private static final String SHARED_PREFERENCES_NAME = "audio_service_preferences";
+    private static final boolean isA14 = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q;
 
-  private static final int NOTIFICATION_ID = 1124;
-  private static final int REQUEST_CONTENT_INTENT = 1000;
-  private static final int FLAG_ALWAYS_SHOW_TICKER = 0x1000000;
-  private static final int FLAG_ONLY_UPDATE_TICKER = 0x2000000;
-  public static final String NOTIFICATION_CLICK_ACTION =
-      "com.ryanheise.audioservice.NOTIFICATION_CLICK";
-  public static final String CUSTOM_ACTION_STOP =
-      "com.ryanheise.audioservice.action.STOP";
-  public static final String CUSTOM_ACTION_FAST_FORWARD =
-      "com.ryanheise.audioservice.action.FAST_FORWARD";
-  public static final String CUSTOM_ACTION_REWIND =
-      "com.ryanheise.audioservice.action.REWIND";
-  private static final String BROWSABLE_ROOT_ID = "root";
-  private static final String RECENT_ROOT_ID = "recent";
-  // See the comment in onMediaButtonEvent to understand how the BYPASS keycodes
-  // work. We hijack KEYCODE_MUTE and KEYCODE_MEDIA_RECORD since the media
-  // session subsystem considers these keycodes relevant to media playback and
-  // will pass them on to us.
-  public static final int KEYCODE_BYPASS_PLAY = KeyEvent.KEYCODE_MUTE;
-  public static final int KEYCODE_BYPASS_PAUSE = KeyEvent.KEYCODE_MEDIA_RECORD;
-  public static final int MAX_COMPACT_ACTIONS = 3;
-  private static final long AUTO_ENABLED_ACTIONS =
-      PlaybackStateCompat.ACTION_STOP | PlaybackStateCompat.ACTION_PAUSE |
-      PlaybackStateCompat.ACTION_PLAY |
-      PlaybackStateCompat.ACTION_REWIND
-      // Auto-enabling these is bad for Android Auto since it forces the
-      // previous/next buttons to always show.
-      //| PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
-      //| PlaybackStateCompat.ACTION_SKIP_TO_NEXT
-      | PlaybackStateCompat.ACTION_FAST_FORWARD |
-      PlaybackStateCompat.ACTION_SET_RATING
-      // "seek" is the exception because it's the only action that
-      // affects the appearance of the media notification, so we leave it
-      // up to the plugin user whether to enable it (via systemActions).
-      //| PlaybackStateCompat.ACTION_SEEK_TO
-      | PlaybackStateCompat.ACTION_PLAY_PAUSE |
-      PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID |
-      PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH |
-      PlaybackStateCompat.ACTION_SKIP_TO_QUEUE_ITEM |
-      PlaybackStateCompat.ACTION_PLAY_FROM_URI |
-      PlaybackStateCompat.ACTION_PREPARE |
-      PlaybackStateCompat.ACTION_PREPARE_FROM_MEDIA_ID |
-      PlaybackStateCompat.ACTION_PREPARE_FROM_SEARCH |
-      PlaybackStateCompat.ACTION_PREPARE_FROM_URI |
-      PlaybackStateCompat.ACTION_SET_REPEAT_MODE |
-      PlaybackStateCompat.ACTION_SET_SHUFFLE_MODE |
-      PlaybackStateCompat.ACTION_SET_CAPTIONING_ENABLED;
+    private static final int NOTIFICATION_ID = 1124;
+    private static final int REQUEST_CONTENT_INTENT = 1000;
+    private static final int FLAG_ALWAYS_SHOW_TICKER = 0x1000000;
+    private static final int FLAG_ONLY_UPDATE_TICKER = 0x2000000;
+    public static final String NOTIFICATION_CUSTOM_ACTION = "com.ryanheise.audioservice.NOTIFICATION_CUSTOM_ACTION";
+    public static final String NOTIFICATION_CUSTOM_ACTION_NAME = "com.ryanheise.audioservice.NOTIFICATION_CUSTOM_ACTION_NAME";
+    public static final String NOTIFICATION_CUSTOM_ACTION_EXTRAS = "com.ryanheise.audioservice.NOTIFICATION_CUSTOM_ACTION_EXTRAS";
+    public static final String NOTIFICATION_CLICK_ACTION = "com.ryanheise.audioservice.NOTIFICATION_CLICK";
+    public static final String CUSTOM_ACTION_STOP = "com.ryanheise.audioservice.action.STOP";
+    public static final String CUSTOM_ACTION_FAST_FORWARD = "com.ryanheise.audioservice.action.FAST_FORWARD";
+    public static final String CUSTOM_ACTION_REWIND = "com.ryanheise.audioservice.action.REWIND";
+    private static final String BROWSABLE_ROOT_ID = "root";
+    private static final String RECENT_ROOT_ID = "recent";
+    // See the comment in onMediaButtonEvent to understand how the BYPASS keycodes work.
+    // We hijack KEYCODE_MUTE and KEYCODE_MEDIA_RECORD since the media session subsystem
+    // considers these keycodes relevant to media playback and will pass them on to us.
+    public static final int KEYCODE_BYPASS_PLAY = KeyEvent.KEYCODE_MUTE;
+    public static final int KEYCODE_BYPASS_PAUSE = KeyEvent.KEYCODE_MEDIA_RECORD;
+    public static final int MAX_COMPACT_ACTIONS = 3;
+    private static final long AUTO_ENABLED_ACTIONS = PlaybackStateCompat.ACTION_STOP
+            | PlaybackStateCompat.ACTION_PAUSE
+            | PlaybackStateCompat.ACTION_PLAY
+            | PlaybackStateCompat.ACTION_REWIND
+            // Auto-enabling these is bad for Android Auto since it forces the
+            // previous/next buttons to always show.
+            //| PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+            //| PlaybackStateCompat.ACTION_SKIP_TO_NEXT
+            | PlaybackStateCompat.ACTION_FAST_FORWARD
+            | PlaybackStateCompat.ACTION_SET_RATING
+            // "seek" is the exception because it's the only action that
+            // affects the appearance of the media notification, so we leave it
+            // up to the plugin user whether to enable it (via systemActions).
+            //| PlaybackStateCompat.ACTION_SEEK_TO
+            | PlaybackStateCompat.ACTION_PLAY_PAUSE
+            | PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID
+            | PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH
+            | PlaybackStateCompat.ACTION_SKIP_TO_QUEUE_ITEM
+            | PlaybackStateCompat.ACTION_PLAY_FROM_URI
+            | PlaybackStateCompat.ACTION_PREPARE
+            | PlaybackStateCompat.ACTION_PREPARE_FROM_MEDIA_ID
+            | PlaybackStateCompat.ACTION_PREPARE_FROM_SEARCH
+            | PlaybackStateCompat.ACTION_PREPARE_FROM_URI
+            | PlaybackStateCompat.ACTION_SET_REPEAT_MODE
+            | PlaybackStateCompat.ACTION_SET_SHUFFLE_MODE
+            | PlaybackStateCompat.ACTION_SET_CAPTIONING_ENABLED;
 
   static AudioService instance;
   private static PendingIntent contentIntent;
@@ -300,27 +298,27 @@ public class AudioService extends MediaBrowserServiceCompat {
     return inSampleSize;
   }
 
-  private FlutterEngine flutterEngine;
-  private AudioServiceConfig config;
-  private PowerManager.WakeLock wakeLock;
-  private MediaSessionCompat mediaSession;
-  private MediaSessionCallback mediaSessionCallback;
-  private List<MediaControl> controls = new ArrayList<>();
-  private List<NotificationCompat.Action> nativeActions = new ArrayList<>();
-  private List<PlaybackStateCompat.CustomAction> customActions =
-      new ArrayList<>();
-  private int[] compactActionIndices;
-  private MediaMetadataCompat mediaMetadata;
-  private Bitmap artBitmap;
-  private String notificationChannelId;
-  private LruCache<String, Bitmap> artBitmapCache;
-  private boolean playing = false;
-  private AudioProcessingState processingState = AudioProcessingState.idle;
-  private int repeatMode;
-  private int shuffleMode;
-  private boolean notificationCreated;
-  private final Handler handler = new Handler(Looper.getMainLooper());
-  private VolumeProviderCompat volumeProvider;
+    private FlutterEngine flutterEngine;
+    private AudioServiceConfig config;
+    private PowerManager.WakeLock wakeLock;
+    private MediaSessionCompat mediaSession;
+    private MediaSessionCallback mediaSessionCallback;
+    private List<MediaControl> controls = new ArrayList<>();
+    private List<NotificationCompat.Action> nativeActions = new ArrayList<>();
+    private List<PlaybackStateCompat.CustomAction> customActions = new ArrayList<>();
+    private int[] compactActionIndices;
+    private MediaMetadataCompat mediaMetadata;
+    private boolean lockscreenArtwork = true;
+    private Bitmap artBitmap;
+    private String notificationChannelId;
+    private LruCache<String, Bitmap> artBitmapCache;
+    private boolean playing = false;
+    private AudioProcessingState processingState = AudioProcessingState.idle;
+    private int repeatMode;
+    private int shuffleMode;
+    private boolean notificationCreated;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private VolumeProviderCompat volumeProvider;
 
   public AudioProcessingState getProcessingState() { return processingState; }
 
@@ -330,16 +328,16 @@ public class AudioService extends MediaBrowserServiceCompat {
 
   public int getShuffleMode() { return shuffleMode; }
 
-  @Override
-  public void onCreate() {
-    instance = this;
-    super.onCreate();
-    repeatMode = 0;
-    shuffleMode = 0;
-    notificationCreated = false;
-    playing = false;
-    processingState = AudioProcessingState.idle;
-    mediaSession = new MediaSessionCompat(this, "media-session");
+    @Override
+    public void onCreate() {
+        instance = this;
+        super.onCreate();
+        repeatMode = 0;
+        shuffleMode = 0;
+        notificationCreated = false;
+        playing = false;
+        processingState = AudioProcessingState.idle;
+        mediaSession = new MediaSessionCompat(this, getApplicationContext().getPackageName());
 
     configure(new AudioServiceConfig(getApplicationContext()));
 
@@ -372,72 +370,103 @@ public class AudioService extends MediaBrowserServiceCompat {
       }
     };
 
-    flutterEngine = AudioServicePlugin.getFlutterEngine(this);
-    System.out.println("flutterEngine warmed up");
-  }
-
-  @Override
-  public int onStartCommand(final Intent intent, int flags, int startId) {
-    MediaButtonReceiver.handleIntent(mediaSession, intent);
-    return START_NOT_STICKY;
-  }
-
-  public void stop() {
-    deactivateMediaSession();
-    stopSelf();
-  }
-
-  public void forceStop() {
-    if (mediaSession.isActive()) {
-      mediaSession.setActive(false);
+        flutterEngine = AudioServicePlugin.getFlutterEngine(this);
+        System.out.println("flutterEngine warmed up");
     }
-    releaseWakeLock();
-    getNotificationManager().cancel(NOTIFICATION_ID);
-    if (listener != null) {
-      listener.onStop();
-    }
-    legacyStopForeground(true);
-    stopSelf();
-  }
-  public void evictArtworkCache() { artBitmapCache.evictAll(); }
 
-  @Override
-  public void onDestroy() {
-    super.onDestroy();
-    if (listener != null) {
-      listener.onDestroy();
-      listener = null;
+    private PendingIntent buildCustomActionPendingIntent(String action, Bundle extras) {
+        Intent i = new Intent(this, AudioService.class);
+        i.setAction(NOTIFICATION_CUSTOM_ACTION);
+        i.putExtra(NOTIFICATION_CUSTOM_ACTION_NAME, action);
+        if (extras != null) i.putExtra(NOTIFICATION_CUSTOM_ACTION_EXTRAS, extras);
+        int flags = 0;
+        if (Build.VERSION.SDK_INT >= 23) {
+            flags |= PendingIntent.FLAG_IMMUTABLE;
+        }
+        return PendingIntent.getService(this, action.hashCode(), i, flags);
     }
-    mediaMetadata = null;
-    artBitmap = null;
-    queue.clear();
-    mediaMetadataCache.clear();
-    controls.clear();
-    artBitmapCache.evictAll();
-    compactActionIndices = null;
-    releaseMediaSession();
-    legacyStopForeground(!config.androidResumeOnClick);
-    // This still does not solve the Android 11 problem.
-    // if (notificationCreated) {
-    //     NotificationManager notificationManager = getNotificationManager();
-    //     notificationManager.cancel(NOTIFICATION_ID);
-    // }
-    releaseWakeLock();
-    instance = null;
-    notificationCreated = false;
-  }
 
-  @SuppressWarnings("deprecation")
-  private void legacyStopForeground(boolean removeNotification) {
-    if (Build.VERSION.SDK_INT >= 24) {
-      // TODO: Consider application of STOP_FOREGROUND_DETACH
-      stopForeground(removeNotification ? STOP_FOREGROUND_REMOVE : 0);
-    } else {
-      // TODO: This API is deprecated and we'll need to eventually
-      // delete this line.
-      stopForeground(removeNotification);
+    public void handleOnCustomAction(String action, Bundle extras) {
+        if (listener == null) return;
+        if (CUSTOM_ACTION_STOP.equals(action)) {
+            forceStop();
+        } else if (CUSTOM_ACTION_FAST_FORWARD.equals(action)) {
+            listener.onFastForward();
+        } else if (CUSTOM_ACTION_REWIND.equals(action)) {
+            listener.onRewind();
+        } else {
+            listener.onCustomAction(action, extras);
+        }
     }
-  }
+
+    @Override
+    public int onStartCommand(final Intent intent, int flags, int startId) {
+        if (intent != null && NOTIFICATION_CUSTOM_ACTION.equals(intent.getAction())) {
+            String action = intent.getStringExtra(NOTIFICATION_CUSTOM_ACTION_NAME);
+            Bundle extras = intent.getBundleExtra(NOTIFICATION_CUSTOM_ACTION_EXTRAS);
+            handleOnCustomAction(action, extras);
+            return START_NOT_STICKY;
+        }
+        MediaButtonReceiver.handleIntent(mediaSession, intent);
+        return START_NOT_STICKY;
+    }
+
+    public void stop() {
+        deactivateMediaSession();
+    }
+
+    public void forceStop() {
+        if (mediaSession.isActive()) {
+            mediaSession.setActive(false);
+        }
+        releaseWakeLock();
+        getNotificationManager().cancel(NOTIFICATION_ID);
+        if (listener != null) {
+            listener.onStop();
+        }
+        ServiceCompat.stopForeground(this, STOP_FOREGROUND_REMOVE);
+        stopForeground(STOP_FOREGROUND_REMOVE);
+        stopSelf();
+    }
+
+    public void evictArtworkCache() {
+        artBitmapCache.evictAll();
+    }
+
+    public void setLockScreenArtwork(boolean show) {
+        final boolean shouldRefresh = show != this.lockscreenArtwork;
+        this.lockscreenArtwork = show;
+        if (shouldRefresh) {
+          setMetadata(this.mediaMetadata);
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (listener != null) {
+            listener.onDestroy();
+            listener = null;
+        }
+        mediaMetadata = null;
+        artBitmap = null;
+        queue.clear();
+        mediaMetadataCache.clear();
+        controls.clear();
+        artBitmapCache.evictAll();
+        compactActionIndices = null;
+        releaseMediaSession();
+        ServiceCompat.stopForeground(this, config.androidResumeOnClick ? STOP_FOREGROUND_DETACH : STOP_FOREGROUND_REMOVE);
+        stopForeground(config.androidResumeOnClick ? STOP_FOREGROUND_DETACH : STOP_FOREGROUND_REMOVE);
+        // This still does not solve the Android 11 problem.
+        // if (notificationCreated) {
+        //     NotificationManager notificationManager = getNotificationManager();
+        //     notificationManager.cancel(NOTIFICATION_ID);
+        // }
+        releaseWakeLock();
+        instance = null;
+        notificationCreated = false;
+    }
 
   public AudioServiceConfig getConfig() { return config; }
 
@@ -476,12 +505,11 @@ public class AudioService extends MediaBrowserServiceCompat {
         resourceName, resourceType, getApplicationContext().getPackageName());
   }
 
-  NotificationCompat.Action createAction(String resource, String label,
-                                         long actionCode) {
-    int iconId = getResourceId(resource);
-    return new NotificationCompat.Action(
-        iconId, label, buildMediaButtonPendingIntent(actionCode));
-  }
+    NotificationCompat.Action createAction(MediaControl control) {
+        PendingIntent pi = control.customAction != null ? buildCustomActionPendingIntent(control.customAction.name, mapToBundle(control.customAction.extras)) : buildMediaButtonPendingIntent(control.actionCode);
+        int iconId = getResourceId(control.icon);
+        return new NotificationCompat.Action(iconId, control.label, pi);
+    }
 
   private boolean needCustomMediaControl(MediaControl control) {
     return control.customAction != null;
@@ -567,40 +595,35 @@ public class AudioService extends MediaBrowserServiceCompat {
     return PendingIntent.getBroadcast(this, 0, intent, flags);
   }
 
-  void setState(List<MediaControl> controls, long actionBits,
-                int[] compactActionIndices,
-                AudioProcessingState processingState, boolean playing,
-                long position, long bufferedPosition, float speed,
-                long updateTime, Integer errorCode, String errorMessage,
-                int repeatMode, int shuffleMode, boolean captioningEnabled,
-                Long queueIndex) {
-    boolean notificationChanged = false;
-    if (!Arrays.equals(compactActionIndices, this.compactActionIndices)) {
-      notificationChanged = true;
-    }
-    if (!controls.equals(this.controls)) {
-      notificationChanged = true;
-    }
-    this.controls = controls;
-    this.nativeActions.clear();
-    this.customActions.clear();
-    for (MediaControl control : controls) {
-      final PlaybackStateCompat.CustomAction customAction =
-          createCustomAction(control);
-      if (customAction != null) {
-        customActions.add(customAction);
-      } else {
-        nativeActions.add(
-            createAction(control.icon, control.label, control.actionCode));
-      }
-    }
-    this.compactActionIndices = compactActionIndices;
-    boolean wasPlaying = this.playing;
-    AudioProcessingState oldProcessingState = this.processingState;
-    this.processingState = processingState;
-    this.playing = playing;
-    this.repeatMode = repeatMode;
-    this.shuffleMode = shuffleMode;
+    void setState(List<MediaControl> controls, long actionBits, int[] compactActionIndices, AudioProcessingState processingState, boolean playing, long position, long bufferedPosition, float speed, long updateTime, Integer errorCode, String errorMessage, int repeatMode, int shuffleMode, boolean captioningEnabled, Long queueIndex) {
+        boolean notificationChanged = false;
+        if (!Arrays.equals(compactActionIndices, this.compactActionIndices)) {
+            notificationChanged = true;
+        }
+        if (!controls.equals(this.controls)) {
+            notificationChanged = true;
+        }
+        this.controls = controls;
+        this.nativeActions.clear();
+        this.customActions.clear();
+        for (MediaControl control : controls) {
+            final PlaybackStateCompat.CustomAction customAction = createCustomAction(control);
+            if (customAction != null) {
+                customActions.add(customAction);
+            }
+
+            // -- another type of pending intent is created also for custom actions
+            // -- some OEMs like OxygenOS 15 won't show custom actions without this. 
+            nativeActions.add(createAction(control));
+            
+        }
+        this.compactActionIndices = compactActionIndices;
+        boolean wasPlaying = this.playing;
+        AudioProcessingState oldProcessingState = this.processingState;
+        this.processingState = processingState;
+        this.playing = playing;
+        this.repeatMode = repeatMode;
+        this.shuffleMode = shuffleMode;
 
     PlaybackStateCompat.Builder stateBuilder =
         new PlaybackStateCompat.Builder()
@@ -634,11 +657,11 @@ public class AudioService extends MediaBrowserServiceCompat {
     mediaSession.setShuffleMode(shuffleMode);
     mediaSession.setCaptioningEnabled(captioningEnabled);
 
-    if (!wasPlaying && playing) {
-      enterPlayingState();
-    } else if (wasPlaying && !playing) {
-      exitPlayingState();
-    }
+        if ((!wasPlaying && playing) || (!notificationCreated && mediaMetadata != null)) {
+            enterPlayingState();
+        } else if (wasPlaying && !playing) {
+            exitPlayingState();
+        }
 
     if (oldProcessingState != AudioProcessingState.idle &&
         processingState == AudioProcessingState.idle) {
@@ -838,10 +861,11 @@ public class AudioService extends MediaBrowserServiceCompat {
     }
   }
 
-  private void exitForegroundState() {
-    legacyStopForeground(false);
-    releaseWakeLock();
-  }
+    private void exitForegroundState() {
+        ServiceCompat.stopForeground(this, STOP_FOREGROUND_DETACH);
+        stopForeground(STOP_FOREGROUND_DETACH);
+        releaseWakeLock();
+    }
 
   private void internalStartForeground() {
     startForeground(NOTIFICATION_ID, buildNotification());
@@ -929,13 +953,14 @@ public class AudioService extends MediaBrowserServiceCompat {
     handler.post(this::updateNotification);
   }
 
-  private MediaMetadataCompat
-  putArtToMetadata(MediaMetadataCompat mediaMetadata) {
-    return new MediaMetadataCompat.Builder(mediaMetadata)
-        .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, artBitmap)
-        .putBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, artBitmap)
-        .build();
-  }
+    private MediaMetadataCompat putArtToMetadata(MediaMetadataCompat mediaMetadata) {
+        final MediaMetadataCompat.Builder builder = new MediaMetadataCompat.Builder(mediaMetadata);
+        if (this.lockscreenArtwork) {
+          builder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, artBitmap);
+        }
+        builder.putBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, artBitmap);
+        return builder.build();
+    }
 
   @Override
   public BrowserRoot onGetRoot(String clientPackageName, int clientUid,
@@ -1093,81 +1118,56 @@ public class AudioService extends MediaBrowserServiceCompat {
       listener.onPlayFromUri(uri, extras);
     }
 
-    @Override
-    public boolean onMediaButtonEvent(Intent mediaButtonEvent) {
-      if (listener == null)
-        return false;
-      // TODO: use typesafe version once SDK 33 is released.
-      @SuppressWarnings("deprecation")
-      final KeyEvent event =
-          (KeyEvent)mediaButtonEvent.getExtras().getParcelable(
-              Intent.EXTRA_KEY_EVENT);
-      final int action = event.getAction();
-      final int keyCode = event.getKeyCode();
-      if (isA14 && keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
-        onPlay();
-        return true;
-      }
-      if (action == KeyEvent.ACTION_DOWN) {
-        switch (keyCode) {
-        case KEYCODE_BYPASS_PLAY:
-          onPlay();
-          break;
-        case KEYCODE_BYPASS_PAUSE:
-          onPause();
-          break;
-        case KeyEvent.KEYCODE_MEDIA_STOP:
-          onStop();
-          break;
-        case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
-          onFastForward();
-          break;
-        case KeyEvent.KEYCODE_MEDIA_REWIND:
-          onRewind();
-          break;
-        // Android unfortunately reroutes media button clicks to
-        // KEYCODE_MEDIA_PLAY/PAUSE instead of the expected KEYCODE_HEADSETHOOK
-        // or KEYCODE_MEDIA_PLAY_PAUSE. As a result, we can't genuinely tell if
-        // onMediaButtonEvent was called because a media button was actually
-        // pressed or because a PLAY/PAUSE action was pressed instead! To get
-        // around this, we make PLAY and PAUSE actions use different keycodes:
-        // KEYCODE_BYPASS_PLAY/PAUSE. Now if we get KEYCODE_MEDIA_PLAY/PUASE
-        // we know it is actually a media button press.
-        case KeyEvent.KEYCODE_MEDIA_NEXT:
-        case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
-        case KeyEvent.KEYCODE_MEDIA_PLAY:
-        case KeyEvent.KEYCODE_MEDIA_PAUSE:
-          // These are the "genuine" media button click events
-          listener.onClick(eventToButton(event));
-          break;
-        case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
-        case KeyEvent.KEYCODE_HEADSETHOOK:
-          long currentTime = System.currentTimeMillis();
-          if (currentTime - lastHeadSetHookClickTime < CLICK_TIMEOUT) {
-            headSetHookClickCount++;
-          } else {
-            headSetHookClickCount = 1;
-          }
-          lastHeadSetHookClickTime = currentTime;
-          resetHeadSetHookClickCount();
-          break;
+        @Override
+        public boolean onMediaButtonEvent(Intent mediaButtonEvent) {
+            if (listener == null) return false;
+            // TODO: use typesafe version once SDK 33 is released.
+            @SuppressWarnings("deprecation")
+            final KeyEvent event = (KeyEvent)mediaButtonEvent.getExtras().getParcelable(Intent.EXTRA_KEY_EVENT);
+            final int action = event.getAction();
+            final int keyCode = event.getKeyCode();
+            if (isA14 && keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
+                onPlay();
+                return true;
+            }
+            if (action == KeyEvent.ACTION_DOWN) {
+                switch (keyCode) {
+                case KEYCODE_BYPASS_PLAY:
+                    onPlay();
+                    break;
+                case KEYCODE_BYPASS_PAUSE:
+                    onPause();
+                    break;
+                case KeyEvent.KEYCODE_MEDIA_STOP:
+                    onStop();
+                    break;
+                case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
+                    onFastForward();
+                    break;
+                case KeyEvent.KEYCODE_MEDIA_REWIND:
+                    onRewind();
+                    break;
+                // Android unfortunately reroutes media button clicks to
+                // KEYCODE_MEDIA_PLAY/PAUSE instead of the expected KEYCODE_HEADSETHOOK
+                // or KEYCODE_MEDIA_PLAY_PAUSE. As a result, we can't genuinely tell if
+                // onMediaButtonEvent was called because a media button was actually
+                // pressed or because a PLAY/PAUSE action was pressed instead! To get
+                // around this, we make PLAY and PAUSE actions use different keycodes:
+                // KEYCODE_BYPASS_PLAY/PAUSE. Now if we get KEYCODE_MEDIA_PLAY/PUASE
+                // we know it is actually a media button press.
+                case KeyEvent.KEYCODE_MEDIA_NEXT:
+                case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+                case KeyEvent.KEYCODE_MEDIA_PLAY:
+                case KeyEvent.KEYCODE_MEDIA_PAUSE:
+                    // These are the "genuine" media button click events
+                case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+                case KeyEvent.KEYCODE_HEADSETHOOK:
+                    listener.onClick(eventToButton(event));
+                    break;
+                }
+            }
+            return true;
         }
-      }
-      return true;
-    }
-
-    private void resetHeadSetHookClickCount() {
-      new Handler(Looper.getMainLooper()).postDelayed(() -> {
-        if (headSetHookClickCount == 1) {
-          listener.onClick(MediaButton.media);
-        } else if (headSetHookClickCount == 2) {
-          listener.onSkipToNext();
-        } else if (headSetHookClickCount == 3) {
-          listener.onSkipToPrevious();
-        }
-        headSetHookClickCount = 0;
-      }, CLICK_TIMEOUT);
-    }
 
     private MediaButton eventToButton(KeyEvent event) {
       switch (event.getKeyCode()) {
@@ -1190,12 +1190,10 @@ public class AudioService extends MediaBrowserServiceCompat {
       listener.onPause();
     }
 
-    @Override
-    public void onStop() {
-      if (listener == null)
-        return;
-      listener.onStop();
-    }
+        @Override
+        public void onStop() {
+            forceStop();
+        }
 
     @Override
     public void onSkipToNext() {
@@ -1274,20 +1272,10 @@ public class AudioService extends MediaBrowserServiceCompat {
       listener.onSetShuffleMode(shuffleMode);
     }
 
-    @Override
-    public void onCustomAction(String action, Bundle extras) {
-      if (listener == null)
-        return;
-      if (CUSTOM_ACTION_STOP.equals(action)) {
-        listener.onStop();
-      } else if (CUSTOM_ACTION_FAST_FORWARD.equals(action)) {
-        listener.onFastForward();
-      } else if (CUSTOM_ACTION_REWIND.equals(action)) {
-        listener.onRewind();
-      } else {
-        listener.onCustomAction(action, extras);
-      }
-    }
+        @Override
+        public void onCustomAction(String action, Bundle extras) {
+            handleOnCustomAction(action, extras);
+        }
 
     @Override
     public void onSetRating(RatingCompat rating, Bundle extras) {

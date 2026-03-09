@@ -40,6 +40,11 @@ class NoOpAudioService extends AudioServicePlatform {
   }
 
   @override
+  Future<void> setLockScreenArtwork(bool show) {
+    return SynchronousFuture(null);
+  }
+
+  @override
   Future<void> notifyChildrenChanged(NotifyChildrenChangedRequest request) {
     return SynchronousFuture(null);
   }

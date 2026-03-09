@@ -1,3 +1,11 @@
+## 0.1.4
+
+* Migrated to package:web (@ali2236)
+
+## 0.1.3
+
+* Support rxdart 0.28.x.
+
 ## 0.1.2
 
 * Support js '>=0.6.3 <0.8.0'
