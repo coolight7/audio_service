@@ -37,7 +37,7 @@ dev_dependencies:
     sdk: flutter
   mockito: ^5.0.0
   fake_async: ^1.2.0
-  flutter_lints: ^3.0.1
+  flutter_lints: ^5.0.0
 
 flutter:
   plugin:
