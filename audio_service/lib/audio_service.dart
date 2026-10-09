@@ -3540,6 +3540,14 @@ class AudioServiceConfig {
   /// [artDownscaleWidth] must also be specified.
   final int? artDownscaleHeight;
 
+  /// The time window, in milliseconds, used to count several presses of a wired
+  /// headset button into one gesture (single click, double click or triple
+  /// click) on Android.
+  ///
+  /// Defaults to 350. Set this to 0 to turn the counting off: every press is
+  /// then reported right away as a single click.
+  final int androidHeadsetClickTimeout;
+
   /// The interval to be used in [AudioHandler.fastForward]. This value will
   /// also be used on iOS to render the skip-forward button. This value must be
   /// positive.
@@ -3573,6 +3581,7 @@ class AudioServiceConfig {
     this.androidStopForegroundOnPause = true,
     this.artDownscaleWidth,
     this.artDownscaleHeight,
+    this.androidHeadsetClickTimeout = 350,
     this.fastForwardInterval = const Duration(seconds: 10),
     this.rewindInterval = const Duration(seconds: 10),
     this.preloadArtwork = false,
@@ -3598,6 +3607,7 @@ class AudioServiceConfig {
         androidStopForegroundOnPause: androidStopForegroundOnPause,
         artDownscaleWidth: artDownscaleWidth,
         artDownscaleHeight: artDownscaleHeight,
+        androidHeadsetClickTimeout: androidHeadsetClickTimeout,
         fastForwardInterval: fastForwardInterval,
         rewindInterval: rewindInterval,
         preloadArtwork: preloadArtwork,

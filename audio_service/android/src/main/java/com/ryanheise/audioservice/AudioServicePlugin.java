@@ -540,6 +540,10 @@ public class AudioServicePlugin implements FlutterPlugin, ActivityAware {
               configMap.get("artDownscaleHeight") != null
                   ? (Integer)configMap.get("artDownscaleHeight")
                   : -1;
+          config.androidHeadsetClickTimeout =
+              configMap.get("androidHeadsetClickTimeout") == null
+                  ? 350
+                  : getInt(configMap.get("androidHeadsetClickTimeout"));
           config.setBrowsableRootExtras(
               (Map<?, ?>)configMap.get("androidBrowsableRootExtras"));
           if (activity != null) {

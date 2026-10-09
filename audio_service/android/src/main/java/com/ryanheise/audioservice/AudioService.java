@@ -1036,8 +1036,15 @@ public class AudioService extends MediaBrowserServiceCompat {
     // 耳机线控的单击/双击/三击只能由软件在判定窗口里数出来：系统只把每次按下原样派发，
     // 窗口内累计的按下次数算作一次手势，窗口结束后才把击数报给上层。
     private static final long DEFAULT_HEAD_SET_CLICK_TIMEOUT = 350;
-    private long headSetClickTimeout = DEFAULT_HEAD_SET_CLICK_TIMEOUT;
     private int headSetClickCount = 0;
+
+    // 判定窗口由配置下发（0 = 关闭多击判定，每次按下立即算一次单击）；每次按下都重新读，
+    // 这样运行期重新 configure 也能马上生效
+    private long headSetClickTimeout() {
+      return (config != null)
+          ? config.androidHeadsetClickTimeout
+          : DEFAULT_HEAD_SET_CLICK_TIMEOUT;
+    }
     // 判定任务用单独的 Handler：外层 handler 会被 updateMediaMetadata() 里的
     // removeCallbacksAndMessages(null) 清掉，挂在那里的判定任务会一起消失
     private final Handler headSetClickHandler = new Handler(Looper.getMainLooper());
@@ -1056,10 +1063,11 @@ public class AudioService extends MediaBrowserServiceCompat {
       headSetClickCount++;
       // 每次按下都重新开始计时：窗口由最后一次按下算起，不会堆出多个待派发任务
       headSetClickHandler.removeCallbacks(headSetClickDispatch);
-      if (headSetClickTimeout <= 0) {
+      final long timeout = Math.max(0, headSetClickTimeout());
+      if (timeout <= 0) {
         headSetClickDispatch.run();
       } else {
-        headSetClickHandler.postDelayed(headSetClickDispatch, headSetClickTimeout);
+        headSetClickHandler.postDelayed(headSetClickDispatch, timeout);
       }
     }
 

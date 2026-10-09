@@ -21,6 +21,7 @@ public class AudioServiceConfig {
     private static final String KEY_ANDROID_STOP_FOREGROUND_ON_PAUSE = "androidStopForegroundOnPause";
     private static final String KEY_ART_DOWNSCALE_WIDTH = "artDownscaleWidth";
     private static final String KEY_ART_DOWNSCALE_HEIGHT = "artDownscaleHeight";
+    private static final String KEY_ANDROID_HEADSET_CLICK_TIMEOUT = "androidHeadsetClickTimeout";
     private static final String KEY_ACTIVITY_CLASS_NAME = "activityClassName";
     private static final String KEY_BROWSABLE_ROOT_EXTRAS = "androidBrowsableRootExtras";
 
@@ -37,6 +38,8 @@ public class AudioServiceConfig {
     public boolean androidStopForegroundOnPause;
     public int artDownscaleWidth;
     public int artDownscaleHeight;
+    /** 耳机线控多击判定的判定窗口（毫秒）：0 = 关闭多击判定，每次按下立即算一次单击 */
+    public int androidHeadsetClickTimeout;
     public String activityClassName;
     public String browsableRootExtras;
 
@@ -54,6 +57,7 @@ public class AudioServiceConfig {
         androidStopForegroundOnPause = preferences.getBoolean(KEY_ANDROID_STOP_FOREGROUND_ON_PAUSE, true);
         artDownscaleWidth = preferences.getInt(KEY_ART_DOWNSCALE_WIDTH, -1);
         artDownscaleHeight = preferences.getInt(KEY_ART_DOWNSCALE_HEIGHT, -1);
+        androidHeadsetClickTimeout = preferences.getInt(KEY_ANDROID_HEADSET_CLICK_TIMEOUT, 350);
         activityClassName = preferences.getString(KEY_ACTIVITY_CLASS_NAME, null);
         browsableRootExtras = preferences.getString(KEY_BROWSABLE_ROOT_EXTRAS, null);
     }
@@ -113,6 +117,7 @@ public class AudioServiceConfig {
             .putBoolean(KEY_ANDROID_STOP_FOREGROUND_ON_PAUSE, androidStopForegroundOnPause)
             .putInt(KEY_ART_DOWNSCALE_WIDTH, artDownscaleWidth)
             .putInt(KEY_ART_DOWNSCALE_HEIGHT, artDownscaleHeight)
+            .putInt(KEY_ANDROID_HEADSET_CLICK_TIMEOUT, androidHeadsetClickTimeout)
             .putString(KEY_ACTIVITY_CLASS_NAME, activityClassName)
             .putString(KEY_BROWSABLE_ROOT_EXTRAS, browsableRootExtras)
             .apply();
