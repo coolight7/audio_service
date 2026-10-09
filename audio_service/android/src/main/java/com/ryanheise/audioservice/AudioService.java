@@ -24,6 +24,7 @@ import android.support.v4.media.RatingCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+import android.util.Log;
 import android.util.LruCache;
 import android.util.Size;
 import android.view.KeyEvent;
@@ -48,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 
 public class AudioService extends MediaBrowserServiceCompat {
+  private static final String TAG = "AudioService";
   public static final String CONTENT_STYLE_SUPPORTED =
       "android.media.browse.CONTENT_STYLE_SUPPORTED";
   public static final String CONTENT_STYLE_PLAYABLE_HINT =
@@ -60,7 +62,6 @@ public class AudioService extends MediaBrowserServiceCompat {
   public static final int CONTENT_STYLE_CATEGORY_GRID_ITEM_HINT_VALUE = 4;
 
     private static final String SHARED_PREFERENCES_NAME = "audio_service_preferences";
-    private static final boolean isA14 = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q;
 
     private static final int NOTIFICATION_ID = 1124;
     private static final int REQUEST_CONTENT_INTENT = 1000;
@@ -120,13 +121,10 @@ public class AudioService extends MediaBrowserServiceCompat {
   }
 
   public static int toKeyCode(long action) {
-    // 使用自定义码值会导致前台服务停止时无法收到通知栏点击事件（部分国产系统）
-    // 使用自定义码值是为了区分通知栏播放按钮和媒体按键的点击事件
-    // 但区分之后的具体作用还不清楚，暂时改回系统码值
-    //        if (action == PlaybackStateCompat.ACTION_PLAY) {
-    //            return isA14 ? KeyEvent.KEYCODE_MEDIA_PLAY :
-    //            KEYCODE_BYPASS_PLAY;
-    //        } else
+    // 现状：播放按钮用系统码值 KEYCODE_MEDIA_PLAY，只有暂停按钮用 KEYCODE_BYPASS_PAUSE。
+    // 曾经想过播放也用自定义码值（KEYCODE_BYPASS_PLAY）以便和真实按键区分开，但使用自定义
+    // 码值会导致前台服务停止时收不到通知栏点击事件（部分国产系统），所以暂时保持现状：
+    // 通知栏的播放按钮与真实按键在键值上无法区分，一律按“播放”处理，见 onMediaButtonEvent。
     if (action == PlaybackStateCompat.ACTION_PAUSE) {
       return KEYCODE_BYPASS_PAUSE;
     } else {
@@ -888,6 +886,10 @@ public class AudioService extends MediaBrowserServiceCompat {
   }
 
   private void deactivateMediaSession() {
+    // 服务停止后不要再派发还没到点的耳机连击
+    if (mediaSessionCallback != null) {
+      mediaSessionCallback.cancelHeadSetClick();
+    }
     if (mediaSession.isActive()) {
       mediaSession.setActive(false);
     }
@@ -896,6 +898,9 @@ public class AudioService extends MediaBrowserServiceCompat {
   }
 
   private void releaseMediaSession() {
+    if (mediaSessionCallback != null) {
+      mediaSessionCallback.cancelHeadSetClick();
+    }
     if (mediaSession == null)
       return;
     deactivateMediaSession();
@@ -1028,9 +1033,40 @@ public class AudioService extends MediaBrowserServiceCompat {
   }
 
   public class MediaSessionCallback extends MediaSessionCompat.Callback {
-    private static final long CLICK_TIMEOUT = 500; // 超时时间
-    private int headSetHookClickCount = 0;
-    private long lastHeadSetHookClickTime = 0;
+    // 耳机线控的单击/双击/三击只能由软件在判定窗口里数出来：系统只把每次按下原样派发，
+    // 窗口内累计的按下次数算作一次手势，窗口结束后才把击数报给上层。
+    private static final long DEFAULT_HEAD_SET_CLICK_TIMEOUT = 350;
+    private long headSetClickTimeout = DEFAULT_HEAD_SET_CLICK_TIMEOUT;
+    private int headSetClickCount = 0;
+    // 判定任务用单独的 Handler：外层 handler 会被 updateMediaMetadata() 里的
+    // removeCallbacksAndMessages(null) 清掉，挂在那里的判定任务会一起消失
+    private final Handler headSetClickHandler = new Handler(Looper.getMainLooper());
+    private final Runnable headSetClickDispatch = () -> {
+      int count = headSetClickCount;
+      headSetClickCount = 0;
+      if (listener == null || count <= 0) return;
+      if (count <= 3) {
+        listener.onHeadsetClick(count);
+      } else {
+        Log.d(TAG, "耳机按键连续按下 " + count + " 次，不派发");
+      }
+    };
+
+    private void handleHeadSetClick() {
+      headSetClickCount++;
+      // 每次按下都重新开始计时：窗口由最后一次按下算起，不会堆出多个待派发任务
+      headSetClickHandler.removeCallbacks(headSetClickDispatch);
+      if (headSetClickTimeout <= 0) {
+        headSetClickDispatch.run();
+      } else {
+        headSetClickHandler.postDelayed(headSetClickDispatch, headSetClickTimeout);
+      }
+    }
+
+    void cancelHeadSetClick() {
+      headSetClickHandler.removeCallbacks(headSetClickDispatch);
+      headSetClickCount = 0;
+    }
 
     @Override
     public void onAddQueueItem(MediaDescriptionCompat description) {
@@ -1126,12 +1162,20 @@ public class AudioService extends MediaBrowserServiceCompat {
             final KeyEvent event = (KeyEvent)mediaButtonEvent.getExtras().getParcelable(Intent.EXTRA_KEY_EVENT);
             final int action = event.getAction();
             final int keyCode = event.getKeyCode();
-            if (isA14 && keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
+            // 只处理按下事件：同一次按键的抬起事件不再处理（否则一次按键会触发两次）
+            if (action != KeyEvent.ACTION_DOWN) return true;
+            // 窗口内收到其它媒体键时丢弃还没派发的连击，避免“已经切歌又被暂停”
+            if (keyCode != KeyEvent.KEYCODE_HEADSETHOOK
+                    && keyCode != KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) {
+                cancelHeadSetClick();
+            }
+            if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
+                // 通知栏的“播放”按钮用系统码值发送（见 toKeyCode 的说明），它和真实按键从键值上
+                // 无法区分，统一按“播放”处理
                 onPlay();
                 return true;
             }
-            if (action == KeyEvent.ACTION_DOWN) {
-                switch (keyCode) {
+            switch (keyCode) {
                 case KEYCODE_BYPASS_PLAY:
                     onPlay();
                     break;
@@ -1157,14 +1201,17 @@ public class AudioService extends MediaBrowserServiceCompat {
                 // we know it is actually a media button press.
                 case KeyEvent.KEYCODE_MEDIA_NEXT:
                 case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
-                case KeyEvent.KEYCODE_MEDIA_PLAY:
                 case KeyEvent.KEYCODE_MEDIA_PAUSE:
                     // These are the "genuine" media button click events
-                case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
-                case KeyEvent.KEYCODE_HEADSETHOOK:
                     listener.onClick(eventToButton(event));
                     break;
-                }
+                case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+                case KeyEvent.KEYCODE_HEADSETHOOK:
+                    // 有线耳机线控只有一个按键，单击/双击/三击要在判定窗口里数出来；
+                    // 长按产生的重复按下不参与计数
+                    if (event.getRepeatCount() == 0)
+                        handleHeadSetClick();
+                    break;
             }
             return true;
         }
@@ -1305,6 +1352,8 @@ public class AudioService extends MediaBrowserServiceCompat {
     void onSearch(String query, Bundle extras,
                   Result<List<MediaBrowserCompat.MediaItem>> result);
     void onClick(MediaButton mediaButton);
+    /** 耳机线控的击数：1 = 单击，2 = 双击，3 = 三击；4 次及以上不会回调 */
+    void onHeadsetClick(int clickCount);
     void onPrepare();
     void onPrepareFromMediaId(String mediaId, Bundle extras);
     void onPrepareFromSearch(String query, Bundle extras);

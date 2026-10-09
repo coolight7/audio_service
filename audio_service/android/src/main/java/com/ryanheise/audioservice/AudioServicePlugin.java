@@ -730,6 +730,11 @@ public class AudioServicePlugin implements FlutterPlugin, ActivityAware {
     }
 
     @Override
+    public void onHeadsetClick(int clickCount) {
+      invokeMethod("headsetClick", mapOf("count", clickCount));
+    }
+
+    @Override
     public void onPause() {
       invokeMethod("pause", mapOf());
     }

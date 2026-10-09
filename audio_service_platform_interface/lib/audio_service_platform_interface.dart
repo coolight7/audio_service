@@ -127,6 +127,11 @@ abstract class AudioHandlerCallbacks {
   /// [MediaButtonMessage.media].
   Future<void> click(ClickRequest request);
 
+  /// Process a headset button click sequence, where
+  /// [HeadsetClickRequest.clickCount] is the number of presses counted inside
+  /// the click window (1 = single click, 2 = double click, 3 = triple click).
+  Future<void> onHeadsetClick(HeadsetClickRequest request);
+
   /// Stop playback and release resources.
   Future<void> stop(StopRequest request);
 
@@ -1023,6 +1028,18 @@ class ClickRequest {
   Map<String, dynamic> toMap() => <String, dynamic>{
         'button': button.index,
       };
+}
+
+/// A headset button click sequence reported by the audio service layer.
+class HeadsetClickRequest {
+  /// The number of presses counted inside the click window: 1 = single click,
+  /// 2 = double click, 3 = triple click. Never greater than 3.
+  final int clickCount;
+
+  @literal
+  const HeadsetClickRequest({required this.clickCount});
+
+  Map<String, dynamic> toMap() => <String, dynamic>{'count': clickCount};
 }
 
 class StopRequest {

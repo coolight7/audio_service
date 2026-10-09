@@ -1937,6 +1937,28 @@ abstract class AudioHandler {
   /// [MediaButton.media].
   Future<void> click([MediaButton button = MediaButton.media]);
 
+  /// Process a headset button click sequence: [clickCount] is 1 for a single
+  /// click, 2 for a double click and 3 for a triple click. 4 or more clicks are
+  /// never reported.
+  ///
+  /// The default implementation keeps the historical behaviour: a single click
+  /// plays/pauses, a double click skips to the next item and a triple click
+  /// skips to the previous item. Override this to let the user choose what each
+  /// gesture does.
+  Future<void> onHeadsetClick(int clickCount) async {
+    switch (clickCount) {
+      case 1:
+        await click(MediaButton.media);
+        break;
+      case 2:
+        await click(MediaButton.next);
+        break;
+      case 3:
+        await click(MediaButton.previous);
+        break;
+    }
+  }
+
   /// Stop playback and release resources.
   Future<void> stop();
 
@@ -2211,6 +2233,11 @@ class CompositeAudioHandler extends AudioHandler {
   @mustCallSuper
   Future<void> click([MediaButton button = MediaButton.media]) =>
       _inner.click(button);
+
+  @override
+  @mustCallSuper
+  Future<void> onHeadsetClick(int clickCount) =>
+      _inner.onHeadsetClick(clickCount);
 
   @override
   @mustCallSuper
@@ -2523,6 +2550,10 @@ class IsolatedAudioHandler extends CompositeAudioHandler {
           await click(request.arguments![0] as MediaButton);
           request.sendPort.send(null);
           break;
+        case 'onHeadsetClick':
+          await onHeadsetClick(request.arguments![0] as int);
+          request.sendPort.send(null);
+          break;
         case 'stop':
           await stop();
           request.sendPort.send(null);
@@ -2798,6 +2829,10 @@ class _ClientIsolatedAudioHandler implements BaseAudioHandler {
   @override
   Future<void> click([MediaButton button = MediaButton.media]) =>
       _send('click', <dynamic>[button]);
+
+  @override
+  Future<void> onHeadsetClick(int clickCount) =>
+      _send('onHeadsetClick', <dynamic>[clickCount]);
 
   @override
   Future<void> stop() => _send('stop');
@@ -3886,6 +3921,10 @@ class _HandlerCallbacks extends AudioHandlerCallbacks {
   Future<void> click(ClickRequest request) async {
     return (await handlerFuture).click(request.button.toPlugin());
   }
+
+  @override
+  Future<void> onHeadsetClick(HeadsetClickRequest request) async =>
+      (await handlerFuture).onHeadsetClick(request.clickCount);
 
   @override
   Future<dynamic> customAction(CustomActionRequest request) async =>

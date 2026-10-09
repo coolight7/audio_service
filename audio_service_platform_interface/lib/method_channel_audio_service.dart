@@ -139,6 +139,10 @@ class MethodChannelAudioService extends AudioServicePlatform {
             button:
                 MediaButtonMessage.values[call.arguments['button'] as int]));
         return null;
+      case 'headsetClick':
+        await callbacks.onHeadsetClick(HeadsetClickRequest(
+            clickCount: call.arguments['count'] as int));
+        return null;
       case 'stop':
         await callbacks.stop(const StopRequest());
         return null;
