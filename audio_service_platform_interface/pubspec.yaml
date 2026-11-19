@@ -9,8 +9,14 @@ dependencies:
   flutter:
     sdk: flutter
   plugin_platform_interface: ^2.0.0
-  smtc_windows: ^1.0.0
   meta: ^1.3.0
+
+flutter:
+  plugin:
+    platforms:
+      windows:
+        # 与 windows/include/.../smtc_audio_service_plugin.h 里的入口函数同名
+        pluginClass: SmtcAudioServicePlugin
 
 dev_dependencies:
   flutter_test:
